@@ -44,12 +44,11 @@ jobs:
             pytest pytest-cov
 
       - name: Run Scraping tests
-        run: python -m pytest Scraping/tests/test_agents.py -v
-
-      - name: Run TopKselection tests
-        run: |
+        run: python run: |
           export PYTHONPATH=$PYTHONPATH:Scraping
           pytest Scraping/tests/test_agents.py -v
+      - name: Run TopKselection tests
+        run: python -m pytest TopKselection/tests/test_module2.py -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
