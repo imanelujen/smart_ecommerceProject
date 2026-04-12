@@ -137,7 +137,7 @@ jobs:
           path: pipeline.yaml
 
       - name: Deploy to Kubeflow cluster
-        if: ${{ secrets.KFP_HOST != '' }}
+        if: ${{ env.KFP_HOST != '' }}
         env:
           KFP_HOST:     ${{ secrets.KFP_HOST }}
           KFP_USERNAME: ${{ secrets.KFP_USERNAME }}
