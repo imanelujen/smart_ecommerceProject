@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from agents.base_agent import Product
-from agents.shopify_agent import ShopifyAgent
-from agents.woocommerce_agent import WooCommerceAgent
-from agents.generic_agent import GenericHTMLAgent
-from orchestrator import Orchestrator
+from Scraping.agents.base_agent import Product
+from Scraping.agents.shopify_agent import ShopifyAgent
+from Scraping.agents.woocommerce_agent import WooCommerceAgent
+from Scraping.agents.generic_agent import GenericHTMLAgent
+from Scraping.orchestrator import Orchestrator
 
 
 # ======================================================================
