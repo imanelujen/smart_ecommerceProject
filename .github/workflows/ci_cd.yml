@@ -44,9 +44,8 @@ jobs:
             pytest pytest-cov
 
       - name: Run Scraping tests
-        run: |
-          export PYTHONPATH=$PYTHONPATH:Scraping
-          pytest Scraping/tests/test_agents.py -v
+        run: pytest Scraping/tests/test_agents.py -v
+        
       - name: Run TopKselection tests
         run: python -m pytest TopKselection/tests/test_module2.py -v
 
