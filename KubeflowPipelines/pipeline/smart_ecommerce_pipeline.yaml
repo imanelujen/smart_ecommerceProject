@@ -1,0 +1,523 @@
+# PIPELINE DEFINITION
+# Name: smart-ecommerce-pipeline
+# Description: End-to-end ML pipeline: scraping → preprocessing → scoring → training → export
+# Inputs:
+#    shop_country: str [Default: 'USA']
+#    top_k: int [Default: 50.0]
+#    urls: list [Default: ['https://hydrogen-demo-store.myshopify.com']]
+components:
+  comp-export-component:
+    executorLabel: exec-export-component
+    inputDefinitions:
+      artifacts:
+        input_clusters:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_pca:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_rules:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_shops:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_topk:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        output_bundle:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-preprocessing-component:
+    executorLabel: exec-preprocessing-component
+    inputDefinitions:
+      artifacts:
+        input_csv:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        feat_cols_out:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_clean:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_scaler:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-scoring-component:
+    executorLabel: exec-scoring-component
+    inputDefinitions:
+      artifacts:
+        input_clean:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        k:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        output_scored:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_shops:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_topk:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-scraping-component:
+    executorLabel: exec-scraping-component
+    inputDefinitions:
+      parameters:
+        shop_country:
+          parameterType: STRING
+        urls:
+          parameterType: LIST
+    outputDefinitions:
+      artifacts:
+        output_csv:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-training-component:
+    executorLabel: exec-training-component
+    inputDefinitions:
+      artifacts:
+        feat_cols_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_scored:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        output_clusters:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_kmeans:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        output_metrics:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+        output_pca:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_rf:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        output_rules:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_scaler:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-export-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - export_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef export_component(\n    input_topk:    Input[Dataset],\n    input_shops:\
+          \   Input[Dataset],\n    input_clusters:Input[Dataset],\n    input_rules:\
+          \   Input[Dataset],\n    input_pca:     Input[Dataset],\n    output_bundle:\
+          \ Output[Dataset],\n):\n    \"\"\"\n    Bundles all artefacts into a single\
+          \ directory that Module 4 consumes.\n    In production this would write\
+          \ to MinIO / S3 / GCS.\n    \"\"\"\n    import json, shutil, os\n    from\
+          \ pathlib import Path\n    import pandas as pd\n\n    bundle_dir = Path(\"\
+          /tmp/export_bundle\")\n    bundle_dir.mkdir(exist_ok=True)\n\n    # Copy\
+          \ all datasets\n    files = {\n        \"top_k_products.csv\":   input_topk.path,\n\
+          \        \"shop_leaderboard.csv\": input_shops.path,\n        \"products_clustered.csv\"\
+          : input_clusters.path,\n        \"association_rules.csv\":  input_rules.path,\n\
+          \        \"pca_2d.csv\":           input_pca.path,\n    }\n    manifest\
+          \ = {}\n    for name, src in files.items():\n        dst = bundle_dir /\
+          \ name\n        shutil.copy(src, dst)\n        rows = len(pd.read_csv(dst))\n\
+          \        manifest[name] = {\"rows\": rows}\n        print(f\"[export] {name}:\
+          \ {rows} rows\")\n\n    # Write manifest\n    manifest[\"generated_at\"\
+          ] = __import__(\"datetime\").datetime.utcnow().isoformat()\n    with open(bundle_dir\
+          \ / \"manifest.json\", \"w\") as f:\n        json.dump(manifest, f, indent=2)\n\
+          \n    # Zip bundle for artifact store\n    shutil.make_archive(output_bundle.path.replace(\"\
+          .zip\",\"\"), \"zip\", bundle_dir)\n    if not output_bundle.path.endswith(\"\
+          .zip\"):\n        shutil.copy(output_bundle.path + \".zip\", output_bundle.path)\n\
+          \n    print(f\"[export] Bundle ready \u2192 {output_bundle.path}\")\n\n"
+        image: smart-ecommerce/ml:latest
+        resources:
+          cpuRequest: 0.2
+          memoryRequest: 0.268435456
+          resourceCpuRequest: 200m
+          resourceMemoryRequest: 256Mi
+    exec-preprocessing-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - preprocessing_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef preprocessing_component(\n    input_csv:    Input[Dataset],\n\
+          \    output_clean: Output[Dataset],\n    output_scaler:Output[Model],\n\
+          \    feat_cols_out: Output[Dataset],\n):\n    \"\"\"\n    Cleans, imputes,\
+          \ engineers features, normalises.\n    Outputs: cleaned CSV, fitted scaler\
+          \ (pkl), feature column list (json).\n    \"\"\"\n    import sys, json\n\
+          \    sys.path.insert(0, \"/app\")\n    from TopKselection.preprocessing\
+          \ import load_and_clean, engineer_features, build_feature_matrix\n    import\
+          \ joblib, pandas as pd\n    df      = load_and_clean(input_csv.path)\n \
+          \   df      = engineer_features(df)\n    X, scaler, feat_cols = build_feature_matrix(df)\n\
+          \n    df.to_csv(output_clean.path, index=False)\n    joblib.dump(scaler,\
+          \ output_scaler.path)\n    with open(feat_cols_out.path, \"w\") as f:\n\
+          \        json.dump(feat_cols, f)\n\n    print(f\"[preprocessing] {len(df)}\
+          \ rows \xD7 {len(feat_cols)} features\")\n\n"
+        image: smart-ecommerce/ml:latest
+        resources:
+          cpuRequest: 0.5
+          memoryRequest: 1.073741824
+          resourceCpuRequest: 500m
+          resourceMemoryRequest: 1Gi
+    exec-scoring-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - scoring_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef scoring_component(\n    input_clean:    Input[Dataset],\n   \
+          \ k:              int,\n    output_scored:  Output[Dataset],\n    output_topk:\
+          \    Output[Dataset],\n    output_shops:   Output[Dataset],\n):\n    \"\"\
+          \"\n    Computes composite scores, selects Top-K, builds shop leaderboard.\n\
+          \    \"\"\"\n    import sys\n    sys.path.insert(0, \"/app\")\n    import\
+          \ pandas as pd\n    from TopKselection.scoring import compute_scores, select_top_k,\
+          \ shop_leaderboard\n\n    df       = pd.read_csv(input_clean.path)\n   \
+          \ df       = compute_scores(df)\n    top_k    = select_top_k(df, k=k)\n\
+          \    shops    = shop_leaderboard(df)\n\n    df.to_csv(output_scored.path,\
+          \ index=False)\n    top_k.to_csv(output_topk.path)\n    shops.to_csv(output_shops.path,\
+          \ index=False)\n\n    print(f\"[scoring] Top-{k} selected. Score range:\
+          \ {df['score'].min():.3f}\u2013{df['score'].max():.3f}\")\n\n"
+        image: smart-ecommerce/ml:latest
+        resources:
+          cpuRequest: 0.5
+          memoryRequest: 0.536870912
+          resourceCpuRequest: 500m
+          resourceMemoryRequest: 512Mi
+    exec-scraping-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - scraping_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef scraping_component(\n    urls: list,\n    shop_country: str,\n\
+          \    output_csv: Output[Dataset],\n):\n    \"\"\"\n    Runs the A2A orchestrator\
+          \ against the given URLs.\n    Output: products_latest.csv written to output_csv.path.\n\
+          \    \"\"\"\n    import sys\n    sys.path.insert(0, \"/app\")\n    from\
+          \ orchestrator import Orchestrator\n    import shutil\n\n    out_dir = \"\
+          /tmp/scraping_out\"\n    orch    = Orchestrator(output_dir=out_dir)\n  \
+          \  df      = orch.run(urls=urls)\n\n    if df.empty:\n        raise RuntimeError(\"\
+          Scraping returned 0 products \u2014 check URLs/credentials\")\n\n    shutil.copy(f\"\
+          {out_dir}/products_latest.csv\", output_csv.path)\n    print(f\"[scraping]\
+          \ {len(df)} products saved to {output_csv.path}\")\n\n"
+        image: smart-ecommerce/scraping:latest
+        resources:
+          cpuRequest: 0.5
+          memoryRequest: 0.536870912
+          resourceCpuRequest: 500m
+          resourceMemoryRequest: 512Mi
+    exec-training-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - training_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef training_component(\n    input_scored:   Input[Dataset],\n  \
+          \  feat_cols_path: Input[Dataset],\n    output_rf:      Output[Model],\n\
+          \    output_kmeans:  Output[Model],\n    output_scaler:  Output[Model],\n\
+          \    output_metrics: Output[Metrics],\n    output_clusters:Output[Dataset],\n\
+          \    output_rules:   Output[Dataset],\n    output_pca:     Output[Dataset],\n\
+          ):\n    \"\"\"\n    Trains all models and writes artefacts + metrics.\n\
+          \    \"\"\"\n    import sys, json, tempfile\n    sys.path.insert(0, \"/app\"\
+          )\n    import numpy as np\n    import pandas as pd\n    import joblib\n\
+          \    from TopKselection.preprocessing import engineer_features, build_feature_matrix,\
+          \ make_train_test_split\n    from TopKselection.scoring       import compute_scores\n\
+          \    from TopKselection.supervised    import train_random_forest\n    from\
+          \ TopKselection.clustering    import find_optimal_k, run_kmeans, label_clusters,\
+          \ run_pca, run_dbscan\n    from TopKselection.association_rules import build_baskets_from_category,\
+          \ run_apriori_manual\n\n    df = pd.read_csv(input_scored.path)\n    with\
+          \ open(feat_cols_path.path) as f:\n        feat_cols = json.load(f)\n\n\
+          \    # Re-build feature matrix\n    df = engineer_features(df)\n    X, scaler,\
+          \ feat_cols = build_feature_matrix(df)\n    y = df[\"is_top_product\"].values\n\
+          \n    # Train/test split\n    X_tr, X_te, y_tr, y_te, idx_tr, idx_te = make_train_test_split(df,\
+          \ X, y)\n\n    # Random Forest\n    with tempfile.TemporaryDirectory() as\
+          \ tmp:\n        rf, rf_metrics = train_random_forest(X_tr, y_tr, X_te, y_te,\
+          \ feat_cols, tmp)\n\n    # Clustering\n    elbow   = find_optimal_k(X, k_range=(2,\
+          \ min(8, len(df)//10 or 2)))\n    best_k  = elbow[\"best_k\"]\n    km, km_labels,\
+          \ km_sil = run_kmeans(X, best_k)\n    df_clust, _ = label_clusters(df, km_labels)\n\
+          \    _, X_2d, explained = run_pca(X)\n    pca_df = pd.DataFrame({\"pc1\"\
+          : X_2d[:,0], \"pc2\": X_2d[:,1],\n                            \"cluster\"\
+          : km_labels, \"title\": df[\"title\"],\n                            \"score\"\
+          : df.get(\"score\", 0)})\n\n    # Association rules\n    baskets = build_baskets_from_category(df)\n\
+          \    rules   = run_apriori_manual(baskets, min_support=0.05, min_confidence=0.1)\n\
+          \n    # Persist models\n    joblib.dump(rf,    output_rf.path)\n    joblib.dump(km,\
+          \    output_kmeans.path)\n    joblib.dump(scaler,output_scaler.path)\n\n\
+          \    # Persist datasets\n    df_clust.to_csv(output_clusters.path, index=False)\n\
+          \    rules.to_csv(   output_rules.path,    index=False)\n    pca_df.to_csv(\
+          \  output_pca.path,      index=False)\n\n    # Log metrics to Kubeflow UI\n\
+          \    output_metrics.log_metric(\"rf_f1\",         rf_metrics[\"f1\"])\n\
+          \    output_metrics.log_metric(\"rf_accuracy\",   rf_metrics[\"accuracy\"\
+          ])\n    output_metrics.log_metric(\"rf_precision\",  rf_metrics[\"precision\"\
+          ])\n    output_metrics.log_metric(\"rf_recall\",     rf_metrics[\"recall\"\
+          ])\n    output_metrics.log_metric(\"km_silhouette\", round(km_sil, 4))\n\
+          \    output_metrics.log_metric(\"n_rules\",       len(rules))\n    output_metrics.log_metric(\"\
+          pca_var_pc1\",   round(explained[0], 4))\n\n    print(f\"[training] RF F1={rf_metrics['f1']:.3f}\
+          \  KMeans sil={km_sil:.3f}  rules={len(rules)}\")\n\n"
+        image: smart-ecommerce/ml:latest
+        resources:
+          cpuRequest: 2.0
+          memoryRequest: 2.147483648
+          resourceCpuRequest: '2'
+          resourceMemoryRequest: 2Gi
+pipelineInfo:
+  description: "End-to-end ML pipeline: scraping \u2192 preprocessing \u2192 scoring\
+    \ \u2192 training \u2192 export"
+  name: smart-ecommerce-pipeline
+root:
+  dag:
+    tasks:
+      export-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-export-component
+        dependentTasks:
+        - scoring-component
+        - training-component
+        inputs:
+          artifacts:
+            input_clusters:
+              taskOutputArtifact:
+                outputArtifactKey: output_clusters
+                producerTask: training-component
+            input_pca:
+              taskOutputArtifact:
+                outputArtifactKey: output_pca
+                producerTask: training-component
+            input_rules:
+              taskOutputArtifact:
+                outputArtifactKey: output_rules
+                producerTask: training-component
+            input_shops:
+              taskOutputArtifact:
+                outputArtifactKey: output_shops
+                producerTask: scoring-component
+            input_topk:
+              taskOutputArtifact:
+                outputArtifactKey: output_topk
+                producerTask: scoring-component
+        taskInfo:
+          name: Export Artefacts for BI Dashboard
+      preprocessing-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-preprocessing-component
+        dependentTasks:
+        - scraping-component
+        inputs:
+          artifacts:
+            input_csv:
+              taskOutputArtifact:
+                outputArtifactKey: output_csv
+                producerTask: scraping-component
+        taskInfo:
+          name: Preprocessing & Feature Engineering
+      scoring-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-scoring-component
+        dependentTasks:
+        - preprocessing-component
+        inputs:
+          artifacts:
+            input_clean:
+              taskOutputArtifact:
+                outputArtifactKey: output_clean
+                producerTask: preprocessing-component
+          parameters:
+            k:
+              componentInputParameter: top_k
+        taskInfo:
+          name: "Composite Scoring \u2192 Top-{{channel:task=;name=top_k;type=Integer;}}"
+      scraping-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-scraping-component
+        inputs:
+          parameters:
+            shop_country:
+              componentInputParameter: shop_country
+            urls:
+              componentInputParameter: urls
+        taskInfo:
+          name: Web Scraping (A2A Agents)
+      training-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-training-component
+        dependentTasks:
+        - preprocessing-component
+        - scoring-component
+        inputs:
+          artifacts:
+            feat_cols_path:
+              taskOutputArtifact:
+                outputArtifactKey: feat_cols_out
+                producerTask: preprocessing-component
+            input_scored:
+              taskOutputArtifact:
+                outputArtifactKey: output_scored
+                producerTask: scoring-component
+        taskInfo:
+          name: Model Training & Evaluation
+  inputDefinitions:
+    parameters:
+      shop_country:
+        defaultValue: USA
+        isOptional: true
+        parameterType: STRING
+      top_k:
+        defaultValue: 50.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      urls:
+        defaultValue:
+        - https://hydrogen-demo-store.myshopify.com
+        isOptional: true
+        parameterType: LIST
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.16.0

@@ -1,0 +1,67 @@
+# docker-compose.yml
+# Local development stack — runs the pipeline without Kubernetes.
+# Usage: docker-compose up
+
+version: "3.9"
+
+services:
+
+  # ── MinIO (local artifact store, mimics S3/GCS) ──────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"    # S3-compatible API
+      - "9001:9001"    # Web console  →  http://localhost:9001
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      retries: 5
+
+  # ── Scraping service ──────────────────────────────────────────────────
+  scraping:
+    build:
+      context: ../..
+      dockerfile: KubeflowPipelines/docker/Dockerfile.scraping
+    image: smart-ecommerce/scraping:latest
+    env_file: ../../.env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  # ── ML service ────────────────────────────────────────────────────────
+  ml:
+    build:
+      context: ../..
+      dockerfile: KubeflowPipelines/docker/Dockerfile.ml
+    image: smart-ecommerce/ml:latest
+    env_file: ../../.env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - scraping
+
+  # ── Pipeline runner (local mode, no Kubeflow needed) ─────────────────
+  pipeline:
+    image: smart-ecommerce/ml:latest
+    command: >
+      python KubeflowPipelines/pipeline/smart_ecommerce_pipeline.py
+      --local
+      --urls https://hydrogen-demo-store.myshopify.com
+      --k 50
+    env_file: ../../.env
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    depends_on:
+      - ml
+
+volumes:
+  minio_data:

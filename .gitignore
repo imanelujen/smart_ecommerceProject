@@ -1,0 +1,14 @@
+# .gitignore
+.env
+__pycache__/
+*.pyc
+*.pkl
+data/
+TopKselection/output/
+LLM/output/
+LLM/logs/
+*.csv
+*.jsonl
+.DS_Store
+ml_venv/
+node_modules/

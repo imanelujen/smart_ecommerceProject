@@ -1,0 +1,34 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps for Playwright / Selenium
+RUN apt-get update && apt-get install -y \
+    chromium chromium-driver \
+    libglib2.0-0 libnss3 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
+    libxrandr2 libgbm1 libasound2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir \
+    requests==2.31.0 \
+    beautifulsoup4==4.12.2 \
+    selenium==4.18.1 \
+    playwright==1.42.0 \
+    scrapy==2.11.0 \
+    pandas==2.2.0 \
+    numpy==1.26.4 \
+    lxml==5.1.0 \
+    python-dotenv==1.0.1 \
+    kfp==2.7.0
+
+# Copy project source
+COPY agents/     /app/agents/
+COPY orchestrator.py /app/orchestrator.py
+
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "-c", "print('Scraping container ready')"]
