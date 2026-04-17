@@ -49,7 +49,9 @@ jobs:
          pytest Scraping/tests/test_agents.py -v
 
       - name: Run TopKselection tests
-        run: python -m pytest TopKselection/tests/test_module2.py -v
+        run: |
+         export PYTHONPATH=$PYTHONPATH:.
+         pytest TopKselection/tests/test_module2.py -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
