@@ -187,6 +187,7 @@ class ShopifyAgent(BaseAgent):
             category      = category,
             subcategory   = subcategory,
             brand         = item.get("vendor", ""),
+            vendor        = item.get("vendor", ""),
             image_url     = image_url,
             tags          = tags[:200],
             url           = f"{base_url}/products/{item.get('handle', '')}",
