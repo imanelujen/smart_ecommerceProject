@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps
-COPY requirements.txt .
+COPY ../Scraping/requirements.txt .
 RUN pip install --no-cache-dir \
     requests==2.31.0 \
     beautifulsoup4==4.12.2 \
@@ -25,8 +25,8 @@ RUN pip install --no-cache-dir \
     kfp==2.7.0
 
 # Copy project source
-COPY agents/     /app/agents/
-COPY orchestrator.py /app/orchestrator.py
+COPY ../Scraping/agents/     /app/agents/
+COPY ../Scraping/orchestrator.py /app/orchestrator.py
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
