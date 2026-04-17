@@ -66,6 +66,7 @@ class Product:
     shop_name: str = ""
     shop_country: str = ""
     shop_product_count: Optional[int] = None
+    vendor: str = ""  # Ajouté pour compatibilité avec les tests
 
     # ── 7. Marketing / associations ───────────────────────────────────
     related_products: str = ""

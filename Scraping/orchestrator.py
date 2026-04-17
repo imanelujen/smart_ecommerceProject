@@ -37,6 +37,15 @@ COLUMN_ORDER = [
 
 
 class Orchestrator:
+    def _add_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Ajoute des colonnes de métadonnées, par exemple price_band."""
+        if "price" in df.columns:
+            df["price_band"] = pd.cut(
+                df["price"],
+                bins=[0, 10, 30, 100, 300, float("inf")],
+                labels=["<$10", "$10-30", "$30-100", "$100-300", ">$300"],
+            )
+        return df
     def __init__(self, output_dir: str = "data"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)

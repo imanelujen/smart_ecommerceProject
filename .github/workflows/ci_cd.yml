@@ -43,10 +43,11 @@ jobs:
             beautifulsoup4 requests lxml \
             pytest pytest-cov
 
-      - name: Run Scraping tests
-        run: |
-         export PYTHONPATH=$PYTHONPATH:.
-         pytest Scraping/tests/test_agents.py -v
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/Scraping" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: pytest Scraping/tests
 
       - name: Run TopKselection tests
         run: |
@@ -152,3 +153,27 @@ jobs:
             --host "$KFP_HOST" \
             --urls https://hydrogen-demo-store.myshopify.com \
             --k 50
+
+  # ────────────────────────────────────────────────────────────────────
+  # Job 4: Build + Test (runs on every push)
+  # ────────────────────────────────────────────────────────────────────
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r Scraping/requirements.txt
+          pip install pytest
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/Scraping" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: pytest Scraping/tests
