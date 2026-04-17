@@ -1,5 +1,5 @@
 """
-module4/app.py
+DashboardBI/app.py
 --------------
 Smart eCommerce — Streamlit BI Dashboard
 
@@ -12,7 +12,7 @@ Pages:
   6. Shops & Geo     — shop leaderboard + country breakdown
 
 Run:
-    streamlit run module4/app.py
+    streamlit run DashboardBI/app.py
 """
 
 import streamlit as st
@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from module4.data_loader import (
+from DashboardBI.data_loader import (
     load_scored, load_top_k, load_clusters, load_pca, load_rules, load_shops
 )
 

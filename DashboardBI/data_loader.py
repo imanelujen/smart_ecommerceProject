@@ -1,7 +1,7 @@
 """
-module4/data_loader.py
+DashboardBI/data_loader.py
 ----------------------
-Loads all Module 2 output files into DataFrames.
+Loads all TopKselection output files into DataFrames.
 Falls back to synthetic demo data if outputs are not available yet.
 """
 
@@ -10,7 +10,7 @@ import numpy as np
 from pathlib import Path
 
 
-OUTPUT_DIR = Path(__file__).parent.parent / "module2" / "output"
+OUTPUT_DIR = Path(__file__).parent.parent / "TopKselection" / "output"
 
 
 def _synth(n=300) -> pd.DataFrame:

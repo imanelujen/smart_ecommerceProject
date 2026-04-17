@@ -1,10 +1,10 @@
-# Module 4 — BI Dashboard (Streamlit)
+# DashboardBI — BI Dashboard (Streamlit)
 
 ## Run locally
 
 ```bash
 pip install streamlit plotly pandas numpy
-streamlit run module4/app.py
+streamlit run DashboardBI/app.py
 # → http://localhost:8501
 ```
 
@@ -25,6 +25,6 @@ streamlit run module4/app.py
 
 ## Data source
 
-Reads from `module2/output/` automatically.
+Reads from `TopKselection/output/` automatically.
 Falls back to **synthetic demo data** if outputs are not yet generated —
 so the dashboard runs out of the box with no ML pipeline needed.
