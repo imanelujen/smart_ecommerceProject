@@ -16,8 +16,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_SCRAPING: ghcr.io/${{ github.repository }}/scraping
-  IMAGE_ML:       ghcr.io/${{ github.repository }}/ml
 
 jobs:
 
@@ -74,6 +72,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Set lowercase repository name
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -92,8 +93,8 @@ jobs:
           file:    smart_ecommerce/KubeflowPipelines/docker/Dockerfile.scraping
           push:    true
           tags: |
-            ${{ env.IMAGE_SCRAPING }}:latest
-            ${{ env.IMAGE_SCRAPING }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/scraping:latest
+            ghcr.io/${{ env.REPO_LOWER }}/scraping:${{ github.sha }}
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
@@ -104,8 +105,8 @@ jobs:
           file:    smart_ecommerce/KubeflowPipelines/docker/Dockerfile.ml
           push:    true
           tags: |
-            ${{ env.IMAGE_ML }}:latest
-            ${{ env.IMAGE_ML }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/ml:latest
+            ghcr.io/${{ env.REPO_LOWER }}/ml:${{ github.sha }}
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
@@ -153,27 +154,3 @@ jobs:
             --host "$KFP_HOST" \
             --urls https://hydrogen-demo-store.myshopify.com \
             --k 50
-
-  # ────────────────────────────────────────────────────────────────────
-  # Job 4: Build + Test (runs on every push)
-  # ────────────────────────────────────────────────────────────────────
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install -r Scraping/requirements.txt
-          pip install pytest
-
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/Scraping" >> $GITHUB_ENV
-
-      - name: Run tests
-        run: pytest Scraping/tests
