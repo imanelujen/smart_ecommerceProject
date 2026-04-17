@@ -15,9 +15,8 @@ RUN pip install --no-cache-dir \
     kfp==2.7.0
 
 # Copy project source
-COPY agents/     /app/agents/
-COPY TopKselection/    /app/TopKselection/
-COPY orchestrator.py /app/orchestrator.py
+COPY Scraping/agents/     /app/agents/
+COPY Scraping/orchestrator.py /app/orchestrator.py
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
