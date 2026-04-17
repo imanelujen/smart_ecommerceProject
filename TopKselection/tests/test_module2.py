@@ -1,4 +1,4 @@
-"""Tests for Module 2 — ML pipeline"""
+"""Tests for TopKselection — ML pipeline"""
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -28,7 +28,7 @@ def make_synthetic_df(n=200):
 
 
 def test_preprocessing():
-    from module2.preprocessing import load_and_clean, engineer_features, build_feature_matrix
+    from TopKselection.preprocessing import load_and_clean, engineer_features, build_feature_matrix
     df = make_synthetic_df()
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w") as f:
         df.to_csv(f.name, index=False)
@@ -44,7 +44,7 @@ def test_preprocessing():
 
 
 def test_scoring():
-    from module2.scoring import compute_scores, select_top_k, shop_leaderboard
+    from TopKselection.scoring import compute_scores, select_top_k, shop_leaderboard
     df = make_synthetic_df()
     df_scored = compute_scores(df)
     assert df_scored["score"].between(0, 1).all()
@@ -58,9 +58,9 @@ def test_scoring():
 
 
 def test_supervised():
-    from module2.preprocessing import engineer_features, build_feature_matrix, make_train_test_split
-    from module2.scoring import compute_scores
-    from module2.supervised import train_random_forest
+    from TopKselection.preprocessing import engineer_features, build_feature_matrix, make_train_test_split
+    from TopKselection.scoring import compute_scores
+    from TopKselection.supervised import train_random_forest
     df = make_synthetic_df()
     df = engineer_features(df)
     df = compute_scores(df)
@@ -76,9 +76,9 @@ def test_supervised():
 
 
 def test_clustering():
-    from module2.preprocessing import engineer_features, build_feature_matrix
-    from module2.scoring import compute_scores
-    from module2.clustering import find_optimal_k, run_kmeans, run_dbscan, label_clusters, run_pca
+    from TopKselection.preprocessing import engineer_features, build_feature_matrix
+    from TopKselection.scoring import compute_scores
+    from TopKselection.clustering import find_optimal_k, run_kmeans, run_dbscan, label_clusters, run_pca
     df = make_synthetic_df(150)
     df = engineer_features(df)
     df = compute_scores(df)
@@ -97,7 +97,7 @@ def test_clustering():
 
 
 def test_association_rules():
-    from module2.association_rules import build_baskets_from_category, run_apriori_manual
+    from TopKselection.association_rules import build_baskets_from_category, run_apriori_manual
     df = make_synthetic_df(100)
     cat_baskets = build_baskets_from_category(df)
     assert len(cat_baskets) >= 1
@@ -110,10 +110,10 @@ def test_association_rules():
 
 
 if __name__ == "__main__":
-    print("Running Module 2 tests...")
+    print("Running TopKselection  tests...")
     test_preprocessing()
     test_scoring()
     test_supervised()
     test_clustering()
     test_association_rules()
-    print("\nAll Module 2 tests passed.")
+    print("\nAll TopKselection  tests passed.")
