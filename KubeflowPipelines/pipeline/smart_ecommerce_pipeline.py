@@ -149,7 +149,7 @@ def run_local(urls: list, shop_country: str, top_k: int):
         from Scraping.orchestrator import Orchestrator
         orch = Orchestrator(output_dir=str(tmp / "scraping"))
         df_raw = orch.run(urls=urls)
-        csv_path = tmp / "scraping" / "products_latest.csv"
+        csv_path = tmp / "scraping" / "products_history.csv"
         print(f"  {len(df_raw)} products scraped")
 
         # Step 2: Preprocessing

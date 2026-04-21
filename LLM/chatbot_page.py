@@ -1,10 +1,10 @@
 """
-module5/chatbot_page.py
+LLM/chatbot_page.py
 ------------------------
-Streamlit chat page — plugs into the Module 4 dashboard as an extra page.
+Streamlit chat page — plugs into the DashboardBI dashboard as an extra page.
 
-Add this to module4/app.py navigation:
-    from module5.chatbot_page import render_chatbot
+Add this to DashboardBI/app.py navigation:
+    from LLM.chatbot_page import render_chatbot
     elif page == "Assistant BI":
         render_chatbot()
 """
@@ -13,7 +13,7 @@ import streamlit as st
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from module5.mcp.mcp_client import get_mcp_client
+from LLM.mcp.mcp_client import get_mcp_client
 
 EXAMPLE_QUESTIONS = [
     "Quels sont les 5 meilleurs produits cette semaine ?",
@@ -28,6 +28,7 @@ EXAMPLE_QUESTIONS = [
 def _route_question(question: str, client) -> str:
     """Route a user question to the right MCP tool."""
     q = question.lower()
+    resp: dict = {}
 
     if any(w in q for w in ["tendance","rapport","trend","semaine","marché"]):
         resp = client.call("generate_trend_report", {"top_k": 10})

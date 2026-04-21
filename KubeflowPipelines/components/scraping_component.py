@@ -23,7 +23,7 @@ def scraping_component(
 ):
     """
     Runs the A2A orchestrator against the given URLs.
-    Output: products_latest.csv written to output_csv.path.
+    Output: products_history.csv written to output_csv.path.
     """
     import sys
     sys.path.insert(0, "/app")
@@ -37,5 +37,5 @@ def scraping_component(
     if df.empty:
         raise RuntimeError("Scraping returned 0 products — check URLs/credentials")
 
-    shutil.copy(f"{out_dir}/products_latest.csv", output_csv.path)
+    shutil.copy(f"{out_dir}/products_history.csv", output_csv.path)
     print(f"[scraping] {len(df)} products saved to {output_csv.path}")

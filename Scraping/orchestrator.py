@@ -3,21 +3,23 @@ orchestrator.py  (v2)
 ---------------------
 Updated orchestrator — now produces a dataset with all 20 required columns.
 Output is ready for Module 2 ML analysis (Top-K selection).
+
+python orchestrator.py --urls https://your-shopify-store.myshopify.com
 """
 
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
 import pandas as pd
 
-from Scraping.agents.base_agent import Product
-from Scraping.agents.shopify_agent import ShopifyAgent
-from Scraping.agents.woocommerce_agent import WooCommerceAgent
-from Scraping.agents.generic_agent import GenericHTMLAgent
+from agents.base_agent import Product
+from agents.shopify_agent import ShopifyAgent
+from agents.woocommerce_agent import WooCommerceAgent
+from agents.generic_agent import GenericHTMLAgent
 
 logger = logging.getLogger("Orchestrator")
 
@@ -46,8 +48,8 @@ class Orchestrator:
                 labels=["<$10", "$10-30", "$30-100", "$100-300", ">$300"],
             )
         if "scraped_at" not in df.columns:
-            from datetime import datetime
-            df["scraped_at"] = datetime.utcnow().isoformat()
+            from datetime import datetime, timezone
+            df["scraped_at"] = datetime.now(timezone.utc).isoformat()
         return df
     def __init__(self, output_dir: str = "data"):
         self.output_dir = Path(output_dir)
@@ -67,7 +69,7 @@ class Orchestrator:
             try:
                 products = agent.run(url)
                 # Stamp scraped_at
-                ts = datetime.utcnow().isoformat()
+                ts = datetime.now(timezone.utc).isoformat()
                 for p in products:
                     p.scraped_at = ts
                 all_products.extend(products)
@@ -145,7 +147,7 @@ class Orchestrator:
     # ── Persistence ───────────────────────────────────────────────────
 
     def _save(self, df: pd.DataFrame):
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
         # Full CSV (for ML pipeline — Module 2)
         csv_path = self.output_dir / f"products_{ts}.csv"
@@ -159,8 +161,23 @@ class Orchestrator:
                 f.write(json.dumps(row.to_dict(), default=str) + "\n")
         logger.info(f"Saved: {jsonl_path}")
 
-        # Latest stable copy
-        df.to_csv(self.output_dir / "products_latest.csv", index=False)
+        # Master history (append all scraped data)
+        import os
+        history_path = self.output_dir / "products_history.csv"
+        if history_path.exists():
+            try:
+                history_df = pd.read_csv(history_path)
+                combined_df = pd.concat([history_df, df], ignore_index=True)
+                # Deduplicate history to avoid exact duplicates if scraping rerun
+                combined_df = combined_df.drop_duplicates(subset=["title", "price", "platform", "scraped_at"], keep="last")
+                combined_df.to_csv(history_path, index=False)
+                logger.info(f"Updated history: {len(combined_df)} rows in {history_path}")
+                df = combined_df # Use combined for summary
+            except Exception as e:
+                logger.error(f"Failed to append to history: {e}")
+        else:
+            df.to_csv(history_path, index=False)
+            logger.info(f"Created new history file: {history_path}")
 
         # Print summary stats
         self._print_summary(df)
@@ -197,4 +214,7 @@ if __name__ == "__main__":
 
     orch = Orchestrator(output_dir=args.output)
     df   = orch.run(urls=args.urls)
-    print(df[["title", "price", "rating", "review_count", "platform"]].head(10))
+    if not df.empty:
+        available_cols = [c for c in ["title", "price", "rating", "review_count", "platform"] if c in df.columns]
+        if available_cols:
+            print(df[available_cols].head(10))

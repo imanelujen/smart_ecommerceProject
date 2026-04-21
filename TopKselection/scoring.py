@@ -35,30 +35,69 @@ def _minmax(series: pd.Series) -> pd.Series:
     return (series - series.min()) / rng if rng > 0 else series * 0
 
 
+def compute_fallback_score(df: pd.DataFrame) -> pd.Series:
+    """Task 1: Fallback scoring system using available basic features."""
+    df = df.copy()
+    
+    # Base Score: discount is a strong indicator of "deal" value
+    score = df["discount_pct"].fillna(0) * 0.4
+    
+    # Premium Brand Bonus (Prestige)
+    prestige_brands = ["glossier", "banish", "drunk elephant", "chanel", "dior", "fenty"]
+    brand_mask = df["brand"].fillna("").str.lower().str.contains("|".join(prestige_brands))
+    score += brand_mask.astype(int) * 30
+    
+    # Price Point logic (Affordability/Value)
+    score += (1 - _minmax(df["price"])) * 20
+    
+    # Category bonus (Skincare often has higher retention/interest)
+    score += (df["category"] == "Skincare").astype(int) * 10
+    
+    # Noise/Uniqueness
+    import random
+    score += df.apply(lambda x: random.uniform(0, 5), axis=1)
+
+    # Normalize 0-100
+    if score.max() > 0:
+        score = (score / score.max()) * 100
+    
+    return score.round(2)
+
+
 def compute_scores(df: pd.DataFrame, weights: dict = None) -> pd.DataFrame:
     """
     Add a 'score' column (0.0–1.0) to df.
-    Also adds 'score_rank' and 'is_top_product' (label for supervised learning).
+    If real telemetry (rating/reviews) is missing, uses fallback logic.
     """
     w = weights or DEFAULT_WEIGHTS
-
     df = df.copy()
 
-    rating_norm      = _minmax(df["rating"].fillna(0))
-    reviews_norm     = _minmax(np.log1p(df["review_count"].fillna(0)))
-    price_norm       = _minmax(df["price"].clip(lower=0))
-    discount_norm    = _minmax(df["discount_pct"].fillna(0))
-    availability_col = df["availability"].map({True:1, False:0, 1:1, 0:0}).fillna(1)
-    stock_norm       = _minmax(df["stock_quantity"].fillna(df["stock_quantity"].median()))
+    # Check if we have real telemetry. If not, use fallback.
+    # Note: If ratings/reviews were synthetically generated in preprocessing, we can still use weighted sum.
+    # But as per Task 1, we implement a specific fallback function.
+    
+    # Detecting lack of data
+    has_telemetry = (df["review_count"] > 2).any() and (df["rating"] != 3.5).any()
 
-    df["score"] = (
-        w["rating"]       * rating_norm
-      + w["reviews"]      * reviews_norm
-      + w["price_comp"]   * (1 - price_norm)
-      + w["discount"]     * discount_norm
-      + w["availability"] * availability_col
-      + w["stock"]        * stock_norm
-    ).round(4)
+    if not has_telemetry:
+        logger.info("Using fallback scoring system (Task 1)")
+        df["score"] = compute_fallback_score(df) / 100.0 # scale to 0-1
+    else:
+        rating_norm      = _minmax(df["rating"].fillna(0))
+        reviews_norm     = _minmax(np.log1p(df["review_count"].fillna(0)))
+        price_norm       = _minmax(df["price"].clip(lower=0))
+        discount_norm    = _minmax(df["discount_pct"].fillna(0))
+        availability_col = df["availability"].map({True:1, False:0, 1:1, 0:0}).fillna(1)
+        stock_norm       = _minmax(df["stock_quantity"].fillna(df["stock_quantity"].median()))
+
+        df["score"] = (
+            w["rating"]       * rating_norm
+          + w["reviews"]      * reviews_norm
+          + w["price_comp"]   * (1 - price_norm)
+          + w["discount"]     * discount_norm
+          + w["availability"] * availability_col
+          + w["stock"]        * stock_norm
+        ).round(4)
 
     df["score_rank"]     = df["score"].rank(ascending=False, method="min").astype(int)
 

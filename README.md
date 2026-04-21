@@ -5,6 +5,11 @@
 Système intelligent et automatisé pour l'analyse de produits e-commerce via scraping, Machine Learning, pipelines MLOps, visualisation BI, et enrichissement LLM.
 
 ---
+# 2. Lancer
+python module5/enrichment_pipeline.py \
+  --input module2/output/products_scored.csv \
+  --output module5/output \
+  --max 50
 
 ## Structure du projet
 
@@ -69,15 +74,15 @@ cp .env.example .env   # Remplir les clés API
 ### 2. Scraping (Module 1)
 
 ```bash
-python orchestrator.py --urls https://store.myshopify.com https://store2.com
-# → data/products_latest.csv
+python Scraping/orchestrator.py --urls https://store.myshopify.com https://store2.com
+# → Scraping/data/products_history.csv
 ```
 
 ### 3. Analyse ML (Module 2)
 
 ```bash
-python module2/pipeline.py --csv data/products_latest.csv --k 50
-# → module2/output/top_k_products.csv + models/
+python TopKselection/pipeline.py --csv Scraping/data/products_history.csv --k 50
+# → TopKselection/output/top_k_products.csv + models/
 ```
 
 ### 4. Dashboard BI (Module 4)

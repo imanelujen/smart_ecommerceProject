@@ -1,11 +1,14 @@
+
 """
-module5/enrichment_pipeline.py
+LLM/enrichment_pipeline.py
 --------------------------------
 Batch enrichment — runs all 4 LLM chains on the scraped dataset
 and saves enriched outputs for the BI dashboard and report.
 
 Usage:
-    python module5/enrichment_pipeline.py --input module2/output/products_scored.csv
+    python LLM/enrichment_pipeline.py --input TopKselection/output/products_scored.csv
+
+    python LLM/enrichment_pipeline.py
 """
 
 import argparse
@@ -21,20 +24,20 @@ logger = logging.getLogger("Enrichment")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from module5.llm_client import LLMClient
-from module5.chains     import (batch_summarize, generate_trend_report,
-                                  build_client_profile, recommend_strategy)
-from module4.data_loader import load_scored, load_top_k, load_clusters, load_rules
+
+from LLM.llm_client import LLMClient
+from LLM.chains import (batch_summarize, generate_trend_report,  build_client_profile, recommend_strategy)
+from DashboardBI.data_loader import load_scored, load_top_k, load_clusters, load_rules
 
 
-def run(csv_path: str = None, output_dir: str = "module5/output",
+def run(csv_path: str = None, output_dir: str = "LLM/output",
         max_summaries: int = 50) -> dict:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     client = LLMClient()
 
     logger.info("=" * 55)
-    logger.info("MODULE 5 — LLM Enrichment Pipeline")
+    logger.info("LLM — LLM Enrichment Pipeline")
     logger.info(f"  Provider : {client.provider}")
     logger.info("=" * 55)
 
@@ -92,16 +95,16 @@ def run(csv_path: str = None, output_dir: str = "module5/output",
         json.dump(summary, f, indent=2, ensure_ascii=False)
 
     logger.info("=" * 55)
-    logger.info("MODULE 5 COMPLETE")
+    logger.info("LLM COMPLETE")
     logger.info(f"  Outputs → {output_dir}/")
     logger.info("=" * 55)
     return summary
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Module 5 — LLM Enrichment")
+    parser = argparse.ArgumentParser(description="LLM — LLM Enrichment")
     parser.add_argument("--input",    default=None,            help="Path to products_scored.csv")
-    parser.add_argument("--output",   default="module5/output")
+    parser.add_argument("--output",   default="LLM/output")
     parser.add_argument("--max",      type=int, default=50,    help="Max products to summarise")
     args = parser.parse_args()
     summary = run(args.input, args.output, args.max)

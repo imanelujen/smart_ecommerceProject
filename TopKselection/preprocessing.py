@@ -2,7 +2,7 @@
 TopKselection/preprocessing.py
 ------------------------
 Step 1 of the ML pipeline.
-Loads products_latest.csv, cleans and prepares features for all algorithms.
+Loads products_history.csv, cleans and prepares features for all algorithms.
 
 Operations:
   - Imputation of missing values
@@ -31,25 +31,104 @@ CATEGORICAL_FEATURES = ["category", "platform", "shop_country"]
 TARGET_COL = "is_top_product"   # computed during scoring step
 
 
+def infer_category(title: str, brand: str) -> tuple:
+    """Task 6: Impute missing category/subcategory based on title keywords."""
+    title = str(title).lower()
+    
+    # Simple keyword mapping
+    skincare_keywords = ["serum", "cream", "lotion", "cleanser", "moisturizer", "toner", "oil", "mask", "peel"]
+    makeup_keywords = ["lipstick", "palette", "foundation", "concealer", "mascara", "liner", "blush", "gloss"]
+    hair_keywords = ["shampoo", "conditioner", "hair", "scalp"]
+    kit_keywords = ["kit", "set", "bundle", "collection"]
+
+    category = "Other"
+    subcategory = "General"
+
+    if any(k in title for k in skincare_keywords):
+        category = "Skincare"
+        if "serum" in title: subcategory = "Serums"
+        elif "mask" in title: subcategory = "Masks"
+        elif "cream" in title or "moisturizer" in title: subcategory = "Moisturizers"
+    elif any(k in title for k in makeup_keywords):
+        category = "Makeup"
+        if "lipstick" in title or "gloss" in title: subcategory = "Lips"
+        elif "palette" in title: subcategory = "Eyes"
+    elif any(k in title for k in hair_keywords):
+        category = "Haircare"
+    elif any(k in title for k in kit_keywords):
+        category = "Kits & Sets"
+
+    return category, subcategory
+
+
+def generate_synthetic_metrics(row: pd.Series) -> pd.Series:
+    """Task 4: Generate plausible ratings and review counts based on price/brand."""
+    import random
+    
+    # Logic: Higher price or recognized brands tend to have more/higher ratings in beauty
+    price = row.get("price", 0)
+    brand = str(row.get("brand", "")).lower()
+    
+    # Base ranges
+    if price > 100:
+        base_rating = 4.2
+        count_range = (50, 500)
+    elif price > 30:
+        base_rating = 4.0
+        count_range = (10, 200)
+    else:
+        base_rating = 3.8
+        count_range = (0, 50)
+
+    # Brand prestige multiplier
+    prestige_brands = ["glossier", "banish", "drunk elephant", "chanel", "dior"]
+    if any(pb in brand for pb in prestige_brands):
+        base_rating += 0.3
+        count_range = (count_range[0] * 2, count_range[1] * 2)
+
+    rating = base_rating + random.uniform(-0.5, 0.3)
+    rating = min(5.0, max(1.0, rating))
+    count = random.randint(*count_range)
+
+    return pd.Series([round(rating, 1), count], index=["rating", "review_count"])
+
+
 def load_and_clean(csv_path: str) -> pd.DataFrame:
     """Load CSV and fix basic quality issues."""
     df = pd.read_csv(csv_path)
     logger.info(f"Loaded {len(df)} rows × {len(df.columns)} cols from {csv_path}")
 
-    # ── Numeric imputation ────────────────────────────────────────────
-    df["rating"] = df["rating"].fillna(df["rating"].median())
+    # ── Task 2: Fix Product IDs (Remove scientific notation) ──────────
+    if "product_id" in df.columns:
+        # Convert to float first (if it was read as scientific notation) then to int string
+        df["product_id"] = pd.to_numeric(df["product_id"], errors="coerce")
+        df["product_id"] = df["product_id"].apply(lambda x: f"{int(x)}" if pd.notna(x) else "Unknown")
 
-    # sécurité si median = NaN
-    if df["rating"].isna().all():
-        df["rating"] = 3.0  # valeur par défaut
+    # ── Task 6: Missing categorical data ──────────────────────────────
+    for idx, row in df.iterrows():
+        if pd.isna(row.get("category")) or str(row.get("category")) == "Unknown" or str(row.get("category")) == "NaN":
+            cat, subcat = infer_category(row["title"], row.get("brand", ""))
+            df.at[idx, "category"] = cat
+            df.at[idx, "subcategory"] = subcat
+        elif pd.isna(row.get("subcategory")) or str(row.get("subcategory")) == "Unknown":
+            _, subcat = infer_category(row["title"], row.get("brand", ""))
+            df.at[idx, "subcategory"] = subcat
 
+    # ── Task 4: Synthetic ratings if missing ──────────────────────────
+    # If 90%+ is default/missing, we generate
+    if df["rating"].fillna(3.0).value_counts(normalize=True).get(3.0, 0) > 0.9:
+        logger.info("Generating synthetic ratings to improve analysis quality (Task 4)")
+        metrics = df.apply(generate_synthetic_metrics, axis=1)
+        df["rating"] = metrics["rating"]
+        df["review_count"] = metrics["review_count"]
+
+    # ── Numeric imputation fallback ─────────────────────────────────────
+    df["rating"] = df["rating"].fillna(df["rating"].median()).fillna(3.5)
     df["review_count"]  = df["review_count"].fillna(0).clip(lower=0)
     df["discount_pct"]  = df["discount_pct"].fillna(0).clip(0, 100)
 
     median_stock = df["stock_quantity"].median()
-    df["stock_quantity"] = df["stock_quantity"].fillna(median_stock)
-    if df["stock_quantity"].isna().all():
-        df["stock_quantity"] = 0
+    df["stock_quantity"] = df["stock_quantity"].fillna(median_stock if pd.notna(median_stock) else 0)
 
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
     df["price"] = df["price"].replace([np.inf, -np.inf], np.nan)

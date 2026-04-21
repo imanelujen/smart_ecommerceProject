@@ -1,5 +1,5 @@
 """
-module5/mcp/mcp_server_llm.py
+LLM/mcp/mcp_server_llm.py
 -------------------------------
 MCP Server: LLM — exposes the 4 LangChain chains as tools.
 
@@ -12,12 +12,15 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from module5.llm_client import LLMClient
-from module5.chains import (
-    summarize_product, generate_trend_report,
-    build_client_profile, recommend_strategy,
+from LLM.llm_client import LLMClient
+from LLM.chains import (
+    BASE_SYSTEM,
+    summarize_product,
+    generate_trend_report,
+    build_client_profile,
+    recommend_strategy,
 )
-from module4.data_loader import load_scored, load_top_k, load_clusters, load_rules
+from DashboardBI.data_loader import load_scored, load_top_k, load_clusters, load_rules
 
 
 _client = None
@@ -27,6 +30,23 @@ def _get_client() -> LLMClient:
     if _client is None:
         _client = LLMClient()
     return _client
+
+
+def _filter_catalog(df: pd.DataFrame, params: dict) -> pd.DataFrame:
+    """Apply optional category / platform / price filters from the dashboard."""
+    if df is None or df.empty:
+        return df
+    out = df
+    pmin, pmax = params.get("price_min"), params.get("price_max")
+    if pmin is not None and pmax is not None and "price" in out.columns:
+        out = out[(out["price"] >= float(pmin)) & (out["price"] <= float(pmax))]
+    cat = params.get("category")
+    if cat and str(cat).strip() and str(cat).lower() != "all" and "category" in out.columns:
+        out = out[out["category"] == cat]
+    plat = params.get("platform")
+    if plat and str(plat).strip() and str(plat).lower() != "all" and "platform" in out.columns:
+        out = out[out["platform"] == plat]
+    return out
 
 
 TOOLS = {
@@ -63,6 +83,27 @@ TOOLS = {
         },
         "handler": lambda p: _answer_question(p["question"]),
     },
+    "generate_bi_report": {
+        "description": (
+            "One-shot BI report for the dashboard: top-K digest, market trend, "
+            "pricing analysis, cross-sell, or segment strategy."
+        ),
+        "parameters": {
+            "report_kind": {
+                "type": "string",
+                "description": (
+                    "topk_summary | market_trend | pricing | cross_sell | segment"
+                ),
+            },
+            "tone": {"type": "string", "default": "Executive summary"},
+            "n_products": {"type": "integer", "default": 10},
+            "category": {"type": "string", "default": None},
+            "platform": {"type": "string", "default": None},
+            "price_min": {"type": "number", "default": None},
+            "price_max": {"type": "number", "default": None},
+        },
+        "handler": lambda p: _generate_bi_report(p),
+    },
 }
 
 
@@ -80,6 +121,110 @@ def _trend_report(top_k: int) -> str:
     df  = load_scored()
     top = load_top_k().head(top_k)
     return generate_trend_report(_get_client(), df, top)
+
+
+def _generate_bi_report(params: dict) -> str:
+    """
+    Maps dashboard report types to data + LLM (single audited MCP call).
+    """
+    kind = (params.get("report_kind") or "market_trend").strip().lower()
+    tone = params.get("tone") or "Executive summary"
+    n = int(params.get("n_products") or 10)
+    n = max(5, min(50, n))
+
+    client = _get_client()
+    df_scored = _filter_catalog(load_scored(), params)
+    if df_scored.empty:
+        df_scored = load_scored()
+    df_top_full = _filter_catalog(load_top_k(), params)
+    if df_top_full.empty:
+        df_top_full = load_top_k()
+    df_top = df_top_full.head(n)
+
+    tone_line = (
+        f"Format demandé : **{tone}**. Structure claire en markdown "
+        f"(titres ##, listes à puces si pertinent)."
+    )
+
+    if kind == "topk_summary":
+        cols = [
+            c
+            for c in [
+                "title",
+                "category",
+                "price",
+                "rating",
+                "review_count",
+                "score",
+                "shop_name",
+                "platform",
+                "discount_pct",
+            ]
+            if c in df_top.columns
+        ]
+        ctx = df_top[cols].to_json(orient="records", indent=2, force_ascii=False)
+        prompt = f"""Tu es analyste e-commerce senior.
+
+Données produits Top-K (JSON) :
+{ctx}
+
+{tone_line}
+
+Tâche : produire un **résumé analytique** des produits ci-dessus (pas une simple liste).
+- Patterns : gammes de prix, qualité perçue (notes/avis), catégories dominantes, plateformes.
+- 2 à 4 recommandations actionnables pour la direction.
+"""
+        return client.chat(prompt, system=BASE_SYSTEM, max_tokens=1400)
+
+    if kind == "market_trend":
+        return generate_trend_report(client, df_scored, df_top)
+
+    if kind == "pricing":
+        lines = []
+        if "platform" in df_scored.columns:
+            plat = (
+                df_scored.groupby("platform")["price"]
+                .agg(["count", "mean", "median", "min", "max"])
+                .round(2)
+            )
+            lines.append("Par plateforme :\n" + plat.to_string())
+        if "category" in df_scored.columns:
+            cat = (
+                df_scored.groupby("category")["price"]
+                .agg(["count", "mean", "median"])
+                .sort_values("mean", ascending=False)
+                .head(10)
+                .round(2)
+            )
+            lines.append("Par catégorie (top 10 par prix moyen) :\n" + cat.to_string())
+        if "discount_pct" in df_scored.columns:
+            disc = (df_scored["discount_pct"].fillna(0) > 0).mean() * 100
+            lines.append(f"Part des produits en promotion : {disc:.1f}%")
+        blob = "\n\n".join(lines) if lines else "Statistiques agrégées indisponibles."
+        prompt = f"""Tu es expert pricing e-commerce.
+
+Statistiques calculées sur le catalogue :
+{blob}
+
+{tone_line}
+
+Analyse **compétitive et pricing** : segments sous/sur-valorisés, effet plateforme, leviers prix/promo, risques — conclus par 3 actions concrètes."""
+        return client.chat(prompt, system=BASE_SYSTEM, max_tokens=1200)
+
+    if kind in ("cross_sell", "segment"):
+        return recommend_strategy(client, load_clusters(), load_rules())
+
+    avg_score = (
+        round(float(df_scored["score"].mean()), 3)
+        if "score" in df_scored.columns
+        else 0.0
+    )
+    return client.chat(
+        f"Type de rapport inconnu : {kind}. Résume les tendances générales du marché.\n\n"
+        f"Statistiques rapides : {len(df_scored)} produits, score moyen {avg_score}.\n{tone_line}",
+        system=BASE_SYSTEM,
+        max_tokens=800,
+    )
 
 
 def _answer_question(question: str) -> str:

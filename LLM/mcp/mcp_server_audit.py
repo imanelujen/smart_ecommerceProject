@@ -1,5 +1,5 @@
 """
-module5/mcp/mcp_server_audit.py
+LLM/mcp/mcp_server_audit.py
 ---------------------------------
 MCP Server: Audit — logs every tool call, enforces permissions and rate limits.
 
@@ -10,7 +10,7 @@ Permissions matrix:
   data_server:  get_top_products, get_cluster_profile, get_rules, get_stats
   llm_server:   summarize_product, generate_trend_report,
                 build_client_profile, recommend_strategy, answer_question
-  rate_limit:   max 10 LLM calls / minute per session
+  rate_limit:   max 20 LLM calls / minute per session
 """
 
 import json
@@ -23,7 +23,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-LOG_PATH = Path("module5/logs/audit.jsonl")
+LOG_PATH = Path("LLM/logs/audit.jsonl")
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Permission table ───────────────────────────────────────────────────
@@ -33,13 +33,17 @@ PERMISSIONS = {
         "get_association_rules", "get_market_stats",
     },
     "llm_server": {
-        "summarize_product", "generate_trend_report",
-        "build_client_profile", "recommend_strategy", "answer_question",
+        "summarize_product",
+        "generate_trend_report",
+        "build_client_profile",
+        "recommend_strategy",
+        "answer_question",
+        "generate_bi_report",
     },
 }
 
 RATE_LIMITS = {
-    "llm_server": {"calls_per_minute": 10},
+    "llm_server": {"calls_per_minute": 20},
     "data_server": {"calls_per_minute": 60},
 }
 

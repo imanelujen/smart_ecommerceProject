@@ -89,6 +89,48 @@ def train_random_forest(X_train, y_train, X_test, y_test, feat_cols, output_dir)
     return rf, metrics
 
 
+def run_overfitting_diagnostics(model, X_train, y_train, X_test, y_test, feat_cols):
+    """Task 5: Check for data leakage and suspicious performance."""
+    y_pred_train = model.predict(X_train)
+    y_pred_test  = model.predict(X_test)
+    
+    train_f1 = f1_score(y_train, y_pred_train, zero_division=0)
+    test_f1  = f1_score(y_test, y_pred_test, zero_division=0)
+    
+    logger.info(f"--- Overfitting Diagnostics ---")
+    logger.info(f"Train F1: {train_f1:.4f} | Test F1: {test_f1:.4f}")
+    
+    if test_f1 > 0.98:
+        logger.warning("CRITICAL: F1 score > 0.98. Possible data leakage or trivial target variable.")
+        
+    # Check for feature dominance
+    if hasattr(model, "feature_importances_"):
+        imps = pd.Series(model.feature_importances_, index=feat_cols).sort_values(ascending=False)
+        top_feat = imps.index[0]
+        top_val  = imps.values[0]
+        logger.info(f"Top feature: {top_feat} ({top_val:.2f})")
+        if top_val > 0.8:
+            logger.warning(f"WARNING: Feature '{top_feat}' dominates the model (>80%). Check if this feature is a proxy for the target.")
+
+    # Check for exact duplicates between train and test (leakage)
+    # This is a bit slow on large X, so we do a quick check on first few rows
+    import hashlib
+    def hash_row(row): return hashlib.md5(row.tobytes()).hexdigest()
+    
+    train_hashes = set(hash_row(r) for r in X_train[:1000])
+    test_hashes  = set(hash_row(r) for r in X_test[:1000])
+    overlaps = train_hashes.intersection(test_hashes)
+    if overlaps:
+        logger.warning(f"LEAKAGE DETECTED: {len(overlaps)} identical rows in train/test samples (first 1000).")
+
+    return {
+        "train_f1": train_f1,
+        "test_f1": test_f1,
+        "leakage_suspected": (test_f1 > 0.98 or (test_f1 - train_f1) > 0.1),
+        "dominant_feature": top_feat if top_val > 0.8 else None
+    }
+
+
 def train_xgboost(X_train, y_train, X_test, y_test, feat_cols, output_dir):
     """Train and evaluate XGBoost (if installed)."""
     if not HAS_XGB:
@@ -141,6 +183,10 @@ def run(artefacts: dict, output_dir: str = "TopKselection/output") -> dict:
 
     rf,  rf_metrics  = train_random_forest(X_tr, y_tr, X_te, y_te, feats, output_dir)
     xgb, xgb_metrics = train_xgboost(X_tr, y_tr, X_te, y_te, feats, output_dir)
+
+    # Run diagnostics on the best model (Random Forest as default)
+    diag = run_overfitting_diagnostics(rf, X_tr, y_tr, X_te, y_te, feats)
+    rf_metrics["diagnostics"] = diag
 
     all_metrics = [rf_metrics, xgb_metrics]
     with open(f"{output_dir}/supervised_metrics.json", "w") as f:

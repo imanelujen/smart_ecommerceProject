@@ -1,5 +1,5 @@
 """
-module5/mcp/mcp_client.py
+LLM/mcp/mcp_client.py
 ---------------------------
 MCP Client — the single gateway between the Streamlit app and all MCP servers.
 
@@ -18,9 +18,9 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from module5.mcp.mcp_server_audit import get_audit
-from module5.mcp.mcp_server_data  import call_tool as data_call
-from module5.mcp.mcp_server_llm   import call_tool as llm_call
+from LLM.mcp.mcp_server_audit import get_audit
+from LLM.mcp.mcp_server_data  import call_tool as data_call
+from LLM.mcp.mcp_server_llm   import call_tool as llm_call
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ TOOL_ROUTING = {
     "build_client_profile":  "llm_server",
     "recommend_strategy":    "llm_server",
     "answer_question":       "llm_server",
+    "generate_bi_report":    "llm_server",
 }
 
 SERVER_HANDLERS = {

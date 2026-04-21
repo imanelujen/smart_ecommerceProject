@@ -1,5 +1,5 @@
 """
-module5/chains.py
+LLM/chains.py
 -----------------
 LangChain-style prompt chains for the 4 LLM tasks required by the spec:
 
@@ -16,7 +16,7 @@ import json
 import logging
 import pandas as pd
 from typing import Optional
-from module5.llm_client import LLMClient
+from LLM.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 

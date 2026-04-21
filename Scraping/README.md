@@ -87,7 +87,7 @@ After each run, `data/` contains:
 |------|-------------|
 | `products_YYYYMMDD_HHMMSS.csv` | Timestamped CSV — one product per row |
 | `products_YYYYMMDD_HHMMSS.jsonl` | JSONL for LLM enrichment (Module 5) |
-| `products_latest.csv` | Always points to the most recent run |
+| `products_history.csv` | Cumulative dataset (all scrapes appended) |
 
 ### CSV columns
 

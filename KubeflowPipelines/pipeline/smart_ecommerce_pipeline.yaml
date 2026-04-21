@@ -312,13 +312,13 @@ deploymentSpec:
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef scraping_component(\n    urls: list,\n    shop_country: str,\n\
           \    output_csv: Output[Dataset],\n):\n    \"\"\"\n    Runs the A2A orchestrator\
-          \ against the given URLs.\n    Output: products_latest.csv written to output_csv.path.\n\
+          \ against the given URLs.\n    Output: products_history.csv written to output_csv.path.\n\
           \    \"\"\"\n    import sys\n    sys.path.insert(0, \"/app\")\n    from\
           \ orchestrator import Orchestrator\n    import shutil\n\n    out_dir = \"\
           /tmp/scraping_out\"\n    orch    = Orchestrator(output_dir=out_dir)\n  \
           \  df      = orch.run(urls=urls)\n\n    if df.empty:\n        raise RuntimeError(\"\
           Scraping returned 0 products \u2014 check URLs/credentials\")\n\n    shutil.copy(f\"\
-          {out_dir}/products_latest.csv\", output_csv.path)\n    print(f\"[scraping]\
+          {out_dir}/products_history.csv\", output_csv.path)\n    print(f\"[scraping]\
           \ {len(df)} products saved to {output_csv.path}\")\n\n"
         image: smart-ecommerce/scraping:latest
         resources:

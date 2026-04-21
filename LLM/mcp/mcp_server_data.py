@@ -1,5 +1,5 @@
 """
-module5/mcp/mcp_server_data.py
+LLM/mcp/mcp_server_data.py
 --------------------------------
 MCP Server: Data — exposes product datasets as tools.
 
@@ -14,7 +14,7 @@ import pandas as pd
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from module4.data_loader import load_scored, load_top_k, load_clusters, load_rules, load_shops
+from DashboardBI.data_loader import load_scored, load_top_k, load_clusters, load_rules, load_shops
 
 
 # ── Tool registry ──────────────────────────────────────────────────────

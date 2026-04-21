@@ -52,16 +52,33 @@ def build_baskets_from_related(df: pd.DataFrame) -> list:
 
 def build_baskets_from_category(df: pd.DataFrame) -> list:
     """
-    Fallback: treat each category as a basket of product titles.
-    Useful when related_products is sparse.
+    Task 3: Create pseudo-baskets by grouping products.
+    Logic: Customers who buy from a subcategory (e.g. 'Lips') of a brand 
+    often look at other products in the same brand or related categories.
     """
     baskets = []
-    for (platform, cat), group in df.groupby(["platform", "category"]):
-        MAX_ITEMS_PER_BASKET = 20  # limit to avoid huge baskets from broad categories for Killed problem !!
-        titles = group["title"].dropna().tolist()[:MAX_ITEMS_PER_BASKET]
+    
+    # 1. Group by Brand + Subcategory
+    for (brand, subcat), group in df.groupby(["brand", "subcategory"]):
+        titles = group["title"].dropna().unique().tolist()
         if len(titles) >= 2:
-            baskets.append(titles)
+            # If group is too large, split into mini-baskets
+            for i in range(0, len(titles), 5):
+                basket = titles[i:i+5]
+                if len(basket) >= 2:
+                    baskets.append(basket)
 
+    # 2. Group by Category + Price Band (to simulate "Budget Skincare" baskets etc.)
+    for (cat, band), group in df.groupby(["category", "price_band"]):
+        titles = group["title"].dropna().unique().tolist()
+        if len(titles) >= 2:
+             # Randomly select a few items to simulate a basket
+             import random
+             for _ in range(min(10, len(titles) // 2)):
+                 basket = random.sample(titles, k=min(len(titles), random.randint(2, 4)))
+                 baskets.append(basket)
+
+    logger.info(f"Generated {len(baskets)} synthetic baskets using Brand/Category clustering (Task 3)")
     return baskets
 
 
@@ -146,20 +163,19 @@ def run_apriori_manual(baskets: list, min_support=0.05, min_confidence=0.3) -> p
 
 
 def run(df: pd.DataFrame, output_dir: str = "TopKselection/output",
-        min_support: float = 0.05, min_confidence: float = 0.3) -> dict:
+        min_support: float = 0.01, min_confidence: float = 0.1) -> dict:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    # Try related_products first, fall back to category baskets
+    # Try related_products first
     baskets = build_baskets_from_related(df)
-    MAX_BASKETS = 50
-    if len(baskets) < MAX_BASKETS:
-        #logger.info("Sparse related_products — using category baskets")
-        #baskets = build_baskets_from_category(df)
-        logger.warning(f"Reducing baskets from {len(baskets)} to {MAX_BASKETS}")
-        baskets = baskets[:MAX_BASKETS]
+    
+    # Task 3: ALWAYS include category/brand synthetic baskets if related_products is sparse
+    # Beauty products often have few direct 'related' scraped links
+    category_baskets = build_baskets_from_category(df)
+    baskets.extend(category_baskets)
 
-    logger.info(f"Built {len(baskets)} baskets for association rule mining")
+    logger.info(f"Built {len(baskets)} total baskets for association rule mining")
 
     if HAS_MLXTEND:
         rules = run_apriori_mlxtend(baskets, min_support, min_confidence)

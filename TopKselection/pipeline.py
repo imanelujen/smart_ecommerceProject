@@ -5,7 +5,7 @@ Main entry point for Module 2.
 Chains all steps: preprocess → score → supervised → cluster → association rules.
 
 Usage:
-    python TopKselection/pipeline.py --csv Scrapingdata/products_latest.csv --k 50
+    python TopKselection/pipeline.py --csv Scrapingdata/products_history.csv --k 50
 
 Outputs in TopKselection/output/:
     df_clean.csv               — cleaned dataset
@@ -23,7 +23,7 @@ Outputs in TopKselection/output/:
     kmeans_model.pkl           — saved KMeans
     scaler.pkl                 — saved MinMaxScaler
 
-    python TopKselection/pipeline.py --csv Scraping/data/products_latest.csv --k 50
+    python TopKselection/pipeline.py --csv Scraping/data/products_history.csv --k 50
 
 """
 
@@ -112,7 +112,7 @@ def run_pipeline(csv_path: str, k: int = 50, output_dir: str = "TopKselection/ou
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Module 2 — ML Pipeline")
-    parser.add_argument("--csv",    required=True, help="Path to products_latest.csv")
+    parser.add_argument("--csv",    required=True, help="Path to products_history.csv")
     parser.add_argument("--k",      type=int, default=50, help="Number of top products")
     parser.add_argument("--output", default="TopKselection/output", help="Output directory")
     args = parser.parse_args()
