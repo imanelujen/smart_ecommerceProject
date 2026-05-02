@@ -47,16 +47,21 @@ if css_path.exists():
 # THEME PALETTE
 # ════════════════════════════════════════════════════════════════════════
 PALETTE = {
-    "blue":   "#3b82f6", "teal":   "#14b8a6", "amber":  "#f59e0b",
-    "purple": "#8b5cf6", "rose":   "#f43f5e", "slate":  "#64748b",
+    "purple": "#7c3aed", "blue":   "#3b82f6", "teal":   "#14b8a6",
+    "amber":  "#f59e0b", "rose":   "#f43f5e", "slate":  "#64748b",
     "green":  "#10b981", "indigo": "#6366f1",
 }
 CLUSTER_COLORS = {
-    "Premium": "#8b5cf6", "Top rated": "#14b8a6",
+    "Premium": "#7c3aed", "Top rated": "#14b8a6",
     "Discount / Promo": "#f59e0b", "Niche / peu connu": "#94a3b8",
     "Mainstream": "#3b82f6", "Anomalie (DBSCAN)": "#f43f5e",
 }
-PLATFORM_COLORS = {"shopify": "#3b82f6", "woocommerce": "#8b5cf6", "other": "#64748b"}
+PLATFORM_COLORS = {"shopify": "#7c3aed", "woocommerce": "#3b82f6", "other": "#94a3b8"}
+
+# Purple gradient scale for all charts
+PURPLE_SCALE = [[0, "#c084fc"], [0.5, "#7c3aed"], [1, "#4c1d95"]]
+PURPLE_DARK   = [[0, "#e9d5ff"], [0.5, "#a78bfa"], [1, "#7c3aed"]]  # light→dark on dark bg
+PLAT_COLORS_DARK = {"shopify": "#a78bfa", "woocommerce": "#60a5fa", "other": "#94a3b8"}
 
 pio.templates["smart_ecommerce"] = go.layout.Template(layout={
     "font": {"family": "Inter, sans-serif", "size": 12, "color": "#334155"},
@@ -104,6 +109,41 @@ def insight_box(title, body, accent=""):
 def footer():
     st.markdown(f'<div class="dashboard-footer">Smart CARE</div>',
                 unsafe_allow_html=True)
+
+def _dark_layout(**kwargs):
+    """Base Plotly layout for dark-canvas charts inside chart_card."""
+    base = dict(
+        paper_bgcolor="#1a1d2e",
+        plot_bgcolor="#1a1d2e",
+        font=dict(family="Inter, sans-serif", color="#e2e8f0", size=12),
+        margin=dict(l=8, r=8, t=8, b=8),
+        legend=dict(font=dict(color="#e2e8f0")),
+        xaxis=dict(color="#94a3b8", gridcolor="#2d3148", linecolor="#2d3148"),
+        yaxis=dict(color="#94a3b8", gridcolor="#2d3148", linecolor="#2d3148"),
+    )
+    base.update(kwargs)
+    return base
+
+def chart_card(title, fig, height=320):
+    """Render a Plotly fig inside a white card with a dark canvas."""
+    st.markdown(
+        f'<div class="chart-card">'
+        f'<div class="chart-card-header">{title}</div>'
+        f'<div class="chart-card-body">',
+        unsafe_allow_html=True,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
+
+def kpi_top_row(items):
+    """Render KPI cards with colored top border. items = list of (value, label, color)."""
+    cols_html = "".join(
+        f'<div class="kpi-card-top" style="border-top-color:{color}">'
+        f'<div class="kpi-top-label">{label}</div>'
+        f'<div class="kpi-top-value">{value}</div></div>'
+        for value, label, color in items
+    )
+    st.markdown(f'<div class="kpi-top-grid">{cols_html}</div>', unsafe_allow_html=True)
 
 # ════════════════════════════════════════════════════════════════════════
 # SIDEBAR
@@ -171,12 +211,12 @@ if page == "Overview":
     avg_rating = df["rating"].mean() if "rating" in df.columns else 0
     on_sale = int(df["discount_pct"].gt(0).mean()*100) if "discount_pct" in df.columns else 0
 
-    kpi_row([
-        kpi_card(f"{len(df):,}", "Total Products", accent=PALETTE["blue"]),
-        kpi_card(f"{avg_score:.2f}", "Avg Score", delta="vs baseline", delta_dir="up", accent=PALETTE["green"]),
-        kpi_card(f"${med_price:.0f}", "Median Price", accent=PALETTE["amber"]),
-        kpi_card(f"{avg_rating:.1f}", "Avg Rating", accent=PALETTE["purple"]),
-        kpi_card(f"{top_pct}%", "Top-K Share", accent=PALETTE["rose"]),
+    kpi_top_row([
+        (f"{len(df):,}",       "Total Products", "#3b82f6"),
+        (f"{avg_score:.2f}",   "Avg Score",      "#10b981"),
+        (f"${med_price:.0f}",  "Median Price",   "#f59e0b"),
+        (f"{avg_rating:.1f}",  "Avg Rating",     "#7c3aed"),
+        (f"{top_pct}%",        "Top-K Share",    "#14b8a6"),
     ])
 
     section("Product Distribution")
@@ -185,45 +225,41 @@ if page == "Overview":
         cat_df = df["category"].value_counts().reset_index()
         cat_df.columns = ["category","count"]
         fig = px.bar(cat_df, x="count", y="category", orientation="h",
-                     color="count", color_continuous_scale=[[0,"#eff6ff"],[1,"#3b82f6"]], text="count")
-        fig.update_traces(texttemplate="%{text}", textposition="outside", marker_line_width=0)
+                     color="count", color_continuous_scale=PURPLE_SCALE, text="count")
+        fig.update_traces(texttemplate="%{text}", textposition="outside",
+                          marker_line_width=0, textfont_color="#334155")
         fig.update_layout(height=320, showlegend=False, coloraxis_showscale=False,
-                          xaxis={"showgrid":False,"visible":False}, yaxis={"title":""})
+                          xaxis={"showgrid":False,"visible":False},
+                          yaxis={"title":"", "tickfont":{"color":"#334155"}})
         st.plotly_chart(fig, use_container_width=True)
     with c2:
         plat_df = df["platform"].value_counts().reset_index()
         plat_df.columns = ["platform","count"]
-        fig2 = go.Figure(go.Pie(labels=plat_df["platform"], values=plat_df["count"], hole=0.55,
-                                marker_colors=[PLATFORM_COLORS.get(p,"#64748b") for p in plat_df["platform"]],
-                                textinfo="percent+label", textfont_size=11))
-        fig2.update_layout(height=320, showlegend=False,
-                           annotations=[{"text":f"<b>{len(df):,}</b><br>products","x":0.5,"y":0.5,
-                                         "font_size":14,"showarrow":False,"font_color":"#0f172a"}])
+        _pie_colors = [PLATFORM_COLORS.get(p, "#94a3b8") for p in plat_df["platform"]]
+        fig2 = go.Figure(go.Pie(
+            labels=plat_df["platform"], values=plat_df["count"], hole=0.55,
+            marker_colors=_pie_colors,
+            textinfo="percent+label", textfont_size=11,
+        ))
+        fig2.update_layout(
+            height=320, showlegend=True,
+            legend=dict(orientation="h", y=-0.05, font_size=11),
+            annotations=[{"text": f"<b>{len(df):,}</b><br>products", "x":0.5,"y":0.5,
+                           "font_size":13, "showarrow":False, "font_color":"#334155"}],
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     section("Score Distribution by Platform")
     fig3 = px.histogram(df, x="score", nbins=40, color="platform", barmode="overlay",
-                        opacity=0.72, color_discrete_map=PLATFORM_COLORS)
+                        opacity=0.75, color_discrete_map=PLATFORM_COLORS)
     fig3.update_layout(height=200, bargap=0.02,
-                       legend={"orientation":"h","y":1.15,"x":0,"font_size":11},
-                       xaxis={"title":"Score","gridcolor":"#f1f5f9"},
-                       yaxis={"title":"Products","gridcolor":"#f1f5f9"})
+                       legend={"orientation":"h","y":1.15,"x":0,"font_size":11,
+                               "font":{"color":"#334155"}},
+                       xaxis={"title":"Score","gridcolor":"#e2e8f0","color":"#64748b"},
+                       yaxis={"title":"Products","gridcolor":"#e2e8f0","color":"#64748b"})
     st.plotly_chart(fig3, use_container_width=True)
 
-    section("Key Insights")
-    c1,c2,c3 = st.columns(3)
-    with c1:
-        insight_box("Top Category",
-                    f"<strong>{cat_df.iloc[0]['category']}</strong> leads with "
-                    f"{cat_df.iloc[0]['count']:,} products.", accent=PALETTE["blue"])
-    with c2:
-        insight_box("Score Health",
-                    f"Average score is <strong>{avg_score:.2f}</strong>. "
-                    f"{top_pct}% qualify as top-K products.", accent=PALETTE["green"])
-    with c3:
-        insight_box("Pricing Signal",
-                    f"Median price <strong>${med_price:.0f}</strong> with "
-                    f"{on_sale}% currently discounted.", accent=PALETTE["amber"])
+
     
 
     low_stock = df["stock_quantity"].lt(5).sum() if "stock_quantity" in df.columns else 0
@@ -245,42 +281,65 @@ elif page == "Top-K Products":
     df_top = load_top_k()
     df_top = apply_filters(df_top) if not df_top.empty else df_top
 
-    cc1, cc2, _ = st.columns([2,2,4])
-    with cc1:
-        k_sel = st.slider("Show top N", 10, min(100, max(10,len(df_top))), 20, step=5)
-    with cc2:
-        sort_by = st.selectbox("Sort by", ["score","rating","price","review_count"])
+    # ── Controls row: segmented N selector + sort dropdown ──────────────
+    _SEG_OPTIONS = [10, 20, 50, 100]
+    ctrl_left, ctrl_right, _ = st.columns([3, 2, 3])
+    with ctrl_left:
+        st.markdown(
+            '<p style="font-size:0.82rem;font-weight:600;color:#334155;'
+            'margin-bottom:4px">Show top N</p>',
+            unsafe_allow_html=True,
+        )
+        k_sel = st.radio(
+            "Show top N",
+            options=_SEG_OPTIONS,
+            index=1,          # default = 20
+            horizontal=True,
+            label_visibility="collapsed",
+            key="topk_n_radio",
+        )
+    with ctrl_right:
+        sort_by = st.selectbox(
+            "Sort by",
+            ["score", "rating", "price", "review_count"],
+            key="topk_sort",
+        )
+
     df_show = df_top.sort_values(sort_by, ascending=False).head(k_sel).reset_index(drop=True)
     df_show.index += 1
 
-    kpi_row([
-        kpi_card(f"{len(df_top):,}", "Eligible Products", accent=PALETTE["blue"]),
-        kpi_card(f"{df_show['score'].max():.3f}", "Top Score", accent=PALETTE["green"]),
-        kpi_card(f"${df_show['price'].mean():.0f}", "Avg Price (top)", accent=PALETTE["amber"]),
-        kpi_card(f"{df_show['rating'].mean():.1f}", "Avg Rating (top)", accent=PALETTE["purple"]),
-        kpi_card(f"{int(df_show['discount_pct'].gt(0).mean()*100)}%", "On Sale", accent=PALETTE["rose"]),
+    kpi_top_row([
+        (f"{len(df_top):,}",                 "Eligible Products", "#3b82f6"),
+        (f"{df_show['score'].max():.3f}",    "Top Score",         "#10b981"),
+        (f"${df_show['price'].mean():.0f}",  "Avg Price (top)",   "#f59e0b"),
+        (f"{df_show['rating'].mean():.1f}",  "Avg Rating (top)",  "#7c3aed"),
+        (f"{int(df_show['discount_pct'].gt(0).mean()*100)}%", "On Sale", "#14b8a6"),
     ])
 
     section("Price vs Rating")
     fig = px.scatter(df_show, x="price", y="rating",
                      size="review_count" if "review_count" in df_show.columns else None,
-                     color="score", color_continuous_scale=[[0,"#eff6ff"],[0.5,"#3b82f6"],[1,"#1e3a8a"]],
+                     color="score", color_continuous_scale=PURPLE_SCALE,
                      hover_data=[c for c in ["title","platform","category"] if c in df_show.columns],
                      size_max=36)
-    fig.add_hline(y=df_show["rating"].median(), line_dash="dot", line_color="#cbd5e1", line_width=1)
-    fig.add_vline(x=df_show["price"].median(), line_dash="dot", line_color="#cbd5e1", line_width=1)
-    fig.update_layout(height=340, xaxis={"title":"Price ($)","gridcolor":"#f1f5f9"},
-                      yaxis={"title":"Rating","gridcolor":"#f1f5f9"},
-                      coloraxis_colorbar={"title":"Score","len":0.7,"thickness":10})
+    fig.add_hline(y=df_show["rating"].median(), line_dash="dot", line_color="#c084fc", line_width=1)
+    fig.add_vline(x=df_show["price"].median(), line_dash="dot", line_color="#c084fc", line_width=1)
+    fig.update_layout(height=340,
+                      xaxis={"title":"Price ($)","gridcolor":"#e2e8f0","color":"#64748b"},
+                      yaxis={"title":"Rating",  "gridcolor":"#e2e8f0","color":"#64748b"},
+                      coloraxis_colorbar={"title":"Score","len":0.7,"thickness":10,
+                                          "tickfont":{"color":"#334155"}})
     st.plotly_chart(fig, use_container_width=True)
 
     section("Score Ranking — Top 10")
     t10 = df_show.head(10)
-    fb = px.bar(t10, x="score", y="title" if "title" in t10.columns else t10.index.astype(str),
-                orientation="h", color="score", color_continuous_scale=[[0,"#eff6ff"],[1,"#1e3a8a"]], text="score")
-    fb.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0)
+    y_col = "title" if "title" in t10.columns else t10.index.astype(str)
+    fb = px.bar(t10, x="score", y=y_col, orientation="h",
+                color="score", color_continuous_scale=PURPLE_SCALE, text="score")
+    fb.update_traces(texttemplate="%{text:.3f}", textposition="outside",
+                     marker_line_width=0, textfont_color="#334155")
     fb.update_layout(height=320, showlegend=False, coloraxis_showscale=False,
-                     xaxis={"visible":False}, yaxis={"title":""})
+                     xaxis={"visible":False}, yaxis={"title":"","tickfont":{"color":"#334155"}})
     st.plotly_chart(fb, use_container_width=True)
 
     section("Ranked Product Table")
@@ -288,7 +347,7 @@ elif page == "Top-K Products":
                          "discount_pct","rating","review_count","availability",
                          "shop_name","platform","score"] if c in df_show.columns]
     styled = df_show[dcols].style.background_gradient(
-        subset=["score"] if "score" in dcols else [], cmap="Blues"
+        subset=["score"] if "score" in dcols else [], cmap="Purples"
     ).format({"price":"${:.2f}",
               "price_promo": lambda v: f"${v:.2f}" if pd.notna(v) else "—",
               "discount_pct": lambda v: f"{v:.0f}%" if pd.notna(v) and v>0 else "—",
@@ -488,50 +547,60 @@ elif page == "Shops & Geography":
     page_header("Shops & Geography", "Competitive landscape by shop and country")
 
     df_shops = load_shops()
-    kpi_row([
-        kpi_card(f"{len(df_shops):,}", "Total Shops", accent=PALETTE["blue"]),
-        kpi_card(f"{df_shops['avg_score'].max():.3f}", "Best Shop Score", accent=PALETTE["green"]),
-        kpi_card(f"{df_shops['avg_score'].mean():.3f}", "Avg Shop Score", accent=PALETTE["teal"]),
-        kpi_card(f"{df_shops['product_count'].max():,}" if "product_count" in df_shops.columns else "—",
-                 "Largest Shop", accent=PALETTE["amber"]),
-        kpi_card(f"{df['shop_country'].nunique() if 'shop_country' in df.columns else '—'}",
-                 "Countries", accent=PALETTE["purple"]),
+    kpi_top_row([
+        (f"{len(df_shops):,}",                "Total Shops",     "#3b82f6"),
+        (f"{df_shops['avg_score'].max():.3f}","Best Shop Score", "#10b981"),
+        (f"{df_shops['avg_score'].mean():.3f}","Avg Shop Score", "#14b8a6"),
+        (f"{df_shops['product_count'].max():,}" if "product_count" in df_shops.columns else "—", "Largest Shop", "#f59e0b"),
+        (f"{df['shop_country'].nunique() if 'shop_country' in df.columns else '—'}", "Countries", "#7c3aed"),
     ])
 
-    ca,cb = st.columns(2)
-    with ca:
-        section("Top 10 Shops by Avg Score")
-        fig = px.bar(df_shops.head(10), x="avg_score", y="shop_name", orientation="h",
-                     color="avg_score", color_continuous_scale=[[0,"#e0f2fe"],[1,"#0369a1"]], text="avg_score")
-        fig.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0)
-        fig.update_layout(height=340, showlegend=False, coloraxis_showscale=False,
-                          xaxis={"visible":False}, yaxis={"title":"","tickfont":{"size":11}})
-        st.plotly_chart(fig, use_container_width=True)
-    with cb:
-        section("Products by Country")
+    left_col, right_col = st.columns([1, 2])
+    with left_col:
+        st.markdown('<div class="config-card">', unsafe_allow_html=True)
+        st.markdown('<div class="config-card-title">Configuration</div>', unsafe_allow_html=True)
+        shop_filter = st.selectbox("Shop", ["All"] + list(df_shops["shop_name"].unique()), key="shop_filter")
+        platform_filter = st.selectbox("Platform", ["All", "shopify", "woocommerce"], key="plat_filter")
+        min_score = st.slider("Min Avg Score", 0.0, 1.0, 0.0, step=0.05, key="score_filter")
+        
+        st.markdown('<div style="margin-top: 1.5rem;" class="btn-llm">', unsafe_allow_html=True)
+        st.button("Generate with LLM", key="shop_llm_btn")
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
+    with right_col:
         if "shop_country" in df.columns:
             cdf = df["shop_country"].value_counts().reset_index()
             cdf.columns = ["country","count"]
-            f2 = go.Figure(go.Pie(labels=cdf["country"], values=cdf["count"], hole=0.5,
-                                  marker_colors=px.colors.qualitative.Set2,
-                                  textinfo="percent+label", textfont_size=10))
-            f2.update_layout(height=340, showlegend=False)
-            st.plotly_chart(f2, use_container_width=True)
+            f1 = go.Figure(go.Pie(
+                labels=cdf["country"], values=cdf["count"], hole=0.55,
+                marker_colors=["#c084fc", "#9333ea", "#7c3aed", "#6b21a8", "#a78bfa"],
+                textinfo="percent+label", textfont_size=11, textfont_color="#e2e8f0"
+            ))
+            f1.update_layout(**_dark_layout(showlegend=False, height=280, margin=dict(l=0, r=0, t=10, b=10)))
+            chart_card("PRODUCT DISTRIBUTION BY COUNTRY", f1)
 
-    section("Avg Score by Country")
-    if "shop_country" in df.columns:
-        cs = df.groupby("shop_country")["score"].mean().sort_values(ascending=False).reset_index()
-        f3 = px.bar(cs, x="shop_country", y="score", color="score",
-                    color_continuous_scale=[[0,"#eff6ff"],[1,"#1e40af"]], text="score")
-        f3.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0)
-        f3.update_layout(height=260, coloraxis_showscale=False,
-                         xaxis={"title":""}, yaxis={"title":"Avg Score","gridcolor":"#f1f5f9"})
-        st.plotly_chart(f3, use_container_width=True)
+        f2 = px.bar(df_shops.head(10), x="avg_score", y="shop_name", orientation="h",
+                    color="avg_score", color_continuous_scale=PURPLE_DARK, text="avg_score")
+        f2.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0, textfont_color="#e2e8f0")
+        f2.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=300))
+        f2.update_xaxes(visible=False)
+        f2.update_yaxes(title="")
+        chart_card("TOP 10 SHOPS BY AVG SCORE", f2)
+
+        if "shop_country" in df.columns:
+            cs = df.groupby("shop_country")["score"].mean().sort_values(ascending=False).reset_index()
+            f3 = px.bar(cs, x="shop_country", y="score", color="score",
+                        color_continuous_scale=PURPLE_DARK, text="score")
+            f3.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0, textfont_color="#e2e8f0")
+            f3.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=280))
+            f3.update_xaxes(title="")
+            f3.update_yaxes(title="Avg Score", gridcolor="#2d3148")
+            chart_card("AVG SCORE BY COUNTRY", f3)
 
     section("Shop Detail Table")
     scols = [c for c in ["shop_name","shop_country","avg_score","product_count","avg_rating"]
              if c in df_shops.columns]
-    st.dataframe(df_shops[scols].style.background_gradient(subset=["avg_score"], cmap="Blues")
+    st.dataframe(df_shops[scols].style.background_gradient(subset=["avg_score"], cmap="Purples")
                  .format({"avg_score":"{:.3f}","avg_rating":"{:.2f}"}),
                  use_container_width=True, height=320)
     footer()
@@ -545,6 +614,32 @@ elif page == "LLM Insights":
 
     page_header("LLM Insights", "AI-generated analysis and strategic recommendations")
 
+    # ── Automated Insight Cards ─────────────────────────────────────────
+    section("Automated Insights")
+    top_pct = int(df["is_top_product"].mean()*100) if "is_top_product" in df.columns else 20
+    avg_score = df["score"].mean() if "score" in df.columns else 0
+    med_price = df["price"].median()
+    on_sale = int(df["discount_pct"].gt(0).mean()*100) if "discount_pct" in df.columns else 0
+    cat_df = df["category"].value_counts().reset_index()
+
+    c1,c2,c3 = st.columns(3)
+    with c1:
+        cat_name = cat_df.iloc[0]['index'] if 'index' in cat_df.columns else cat_df.iloc[0]['category']
+        insight_box("Top Category",
+                    f"<strong>{cat_name}</strong> leads with "
+                    f"{cat_df.iloc[0]['count']:,} products.", accent="#3b82f6")
+    with c2:
+        insight_box("Score Health",
+                    f"Average score is <strong>{avg_score:.2f}</strong>. "
+                    f"{top_pct}% qualify as top-K products.", accent="#10b981")
+    with c3:
+        insight_box("Pricing Signal",
+                    f"Median price <strong>${med_price:.0f}</strong> with "
+                    f"{on_sale}% currently discounted.", accent="#f59e0b")
+
+    # ── Report Generation Layout (1/3 - 2/3) ────────────────────────────
+    st.markdown('<div style="height: 1.5rem;"></div>', unsafe_allow_html=True)
+
     REPORT_KIND_MAP = {
         "Top-K product summary": "topk_summary",
         "Market trend analysis": "market_trend",
@@ -553,29 +648,40 @@ elif page == "LLM Insights":
         "Segment strategy brief": "segment",
     }
 
-    cl, cr = st.columns([1, 2])
+    cl, cr = st.columns([1, 2], gap="large")
+    
     with cl:
-        section("Generate Report")
-        report_type = st.selectbox("Report type", list(REPORT_KIND_MAP.keys()))
-        tone = st.selectbox(
-            "Tone",
-            ["Executive summary", "Detailed analysis", "Bullet points"],
-        )
-        n_products = st.slider("Products to analyse", 5, 50, 10, 5)
-        with st.expander("LLM & MCP configuration", expanded=False):
-            st.caption(
-                "Reports run through the **MCP client** (audit + rate limits) and call the "
-                "**LLM server** tools. Set `LLM_PROVIDER` and API keys in `.env` or the environment "
-                "(see `LLM/env.example`). Use `mock` for demos without API keys."
-            )
-        if st.button("Generate with LLM", use_container_width=True):
-            st.session_state["llm_trigger"] = True
-            st.session_state["llm_report_type"] = report_type
-            st.session_state["llm_tone"] = tone
-            st.session_state["llm_n"] = n_products
+        with st.container(border=True):
+            st.markdown('<h3 style="font-size:1.1rem; color:#334155; margin-bottom:1rem; margin-top:0;">Configuration</h3>', unsafe_allow_html=True)
+            report_type = st.selectbox("Report type", ["Top-K product summary", "Market trend analysis", "Competitive pricing report", "Cross-sell opportunities", "Segment strategy brief"])
+            tone = st.selectbox("Tone", ["Executive summary", "Detailed analysis", "Bullet points"])
+            n_products = st.slider("Products to analyse", 5, 50, 10, 5)
+            
+            with st.expander("LLM & MCP configuration", expanded=False):
+                st.caption(
+                    "Reports run through the **MCP client** and call the **LLM server** tools. "
+                    "Use `mock` for demos without API keys."
+                )
+            
+            st.markdown('<div style="margin-top:1.5rem;" class="btn-llm">', unsafe_allow_html=True)
+            if st.button("Generate with LLM", use_container_width=True):
+                st.session_state["llm_trigger"] = True
+                st.session_state["llm_report_type"] = report_type
+                st.session_state["llm_tone"] = tone
+                st.session_state["llm_n"] = n_products
+            st.markdown('</div>', unsafe_allow_html=True)
 
     with cr:
-        section("AI Recommendations")
+        if not st.session_state.get("llm_trigger") and not st.session_state.get("llm_output"):
+            st.markdown(f'''
+            <div class="dropzone-container">
+                <div class="dropzone-icon">✨</div>
+                <h3 class="dropzone-title">AI Workspace</h3>
+                <p class="dropzone-text">Configure report options on the left and click <b>Generate</b> to receive strategic insights.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            section("Recommendations")
         if st.session_state.get("llm_trigger"):
             report_type = st.session_state.get("llm_report_type", report_type)
             tone = st.session_state.get("llm_tone", tone)

@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   Smart eCommerce Intelligence — Design System
+   Smart eCommerce Intelligence — Design System v3.0
+   Light Mode · Clean & Purple · SaaS B2B
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── Fonts ─────────────────────────────────────────────────────────── */
@@ -11,17 +12,34 @@ html, body, [class*="css"] {
 
 /* ── CSS Variables ─────────────────────────────────────────────────── */
 :root {
-    --primary: #0f172a;
-    --primary-light: #1e293b;
-    --primary-lighter: #334155;
-    --secondary: #0d9488;
-    --secondary-light: #14b8a6;
-    --accent-blue: #3b82f6;
-    --accent-purple: #8b5cf6;
-    --accent-amber: #f59e0b;
-    --accent-rose: #e11d48;
-    --accent-green: #10b981;
-    --neutral-50: #f8fafc;
+    /* Purple primary */
+    --purple-50:  #f5f3ff;
+    --purple-100: #ede9fe;
+    --purple-200: #ddd6fe;
+    --purple-500: #8b5cf6;
+    --purple-600: #7c3aed;
+    --purple-700: #6d28d9;
+
+    /* Neutrals */
+    --bg-app:     #f8fafc;   /* slate-50 — app background */
+    --bg-card:    #ffffff;   /* white — cards & sidebar */
+    --text-primary:   #334155; /* slate-700 */
+    --text-secondary: #64748b; /* slate-500 */
+    --text-muted:     #94a3b8; /* slate-400 */
+    --border:         #e2e8f0; /* slate-200 */
+    --border-light:   #f1f5f9; /* slate-100 */
+
+    /* Legacy aliases kept for compatibility */
+    --primary:         #334155;
+    --primary-light:   #475569;
+    --primary-lighter: #64748b;
+    --secondary:       #7c3aed;
+    --accent-blue:     #3b82f6;
+    --accent-purple:   #7c3aed;
+    --accent-amber:    #f59e0b;
+    --accent-rose:     #f43f5e;
+    --accent-green:    #10b981;
+    --neutral-50:  #f8fafc;
     --neutral-100: #f1f5f9;
     --neutral-200: #e2e8f0;
     --neutral-300: #cbd5e1;
@@ -29,121 +47,84 @@ html, body, [class*="css"] {
     --neutral-500: #64748b;
     --neutral-600: #475569;
     --neutral-700: #334155;
+
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 14px rgba(0,0,0,0.08);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.07);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.10);
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Sidebar ───────────────────────────────────────────────────────── */
+/* ── App Background ────────────────────────────────────────────────── */
+.stApp, [data-testid="stAppViewContainer"] {
+    background-color: var(--bg-app) !important;
+}
+[data-testid="stHeader"] {
+    background-color: var(--bg-app) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+/* ── Global Streamlit Text for Light Theme ─────────────────────────── */
+.main [data-testid="stMarkdownContainer"] p,
+.main [data-testid="stMarkdownContainer"] span,
+.main [data-testid="stMarkdownContainer"] h1,
+.main [data-testid="stMarkdownContainer"] h2,
+.main [data-testid="stMarkdownContainer"] li,
+.main .stText {
+    color: var(--text-primary) !important;
+}
+.main [data-testid="stMarkdownContainer"] strong,
+.main [data-testid="stMarkdownContainer"] b {
+    color: #0f172a !important;
+}
+/* Exception: don't override colored spans like page-subtitle if they have classes */
+.main span.page-subtitle { color: var(--text-muted) !important; }
+.main h1.page-title { color: var(--text-primary) !important; }
+
+/* ── BaseWeb UI Overrides (Radio Buttons & Selectbox Dropdowns) ─────── */
+/* Force all text in radio buttons to be dark */
+[data-testid="stSidebar"] [data-testid="stRadio"] p,
+[data-testid="stSidebar"] [data-testid="stRadio"] div,
+[data-baseweb="radio"] p,
+[data-baseweb="radio"] div {
+    color: var(--text-primary) !important;
+}
+
+/* Force all text in selectbox/dropdown popup menus to be dark */
+[data-baseweb="menu"] li,
+[data-baseweb="menu"] span,
+[data-baseweb="menu"] div,
+[data-testid="stVirtualDropdown"] li {
+    color: var(--text-primary) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR — White, clean, purple accents
+   ══════════════════════════════════════════════════════════════════════ */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%) !important;
-    border-right: 1px solid rgba(255,255,255,0.06);
+    background: var(--bg-card) !important;
+    border-right: 1px solid var(--border) !important;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.04) !important;
 }
+/* Reset dark-mode text overrides */
 [data-testid="stSidebar"] * {
-    color: #94a3b8 !important;
-}
-[data-testid="stSidebar"] h1, 
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: #f1f5f9 !important;
-    font-weight: 600;
+    color: var(--text-secondary) !important;
 }
 [data-testid="stSidebar"] hr {
-    border-color: rgba(255,255,255,0.08) !important;
+    border-color: var(--border) !important;
     margin: 0.75rem 0;
 }
-/* ── Sidebar BI navigation (st.radio as nav boxes, no radio control) ─ */
-[data-testid="stSidebar"] [data-testid="stRadio"] {
-    width: 100%;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label,
-[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"] {
-    width: 100% !important;
-    min-height: 52px;
-    height: 52px;
-    box-sizing: border-box !important;
-    border-radius: 10px !important;
-    padding: 12px 16px !important;
-    margin: 0 !important;
-    background: #f8fafc !important;
-    border: none !important;
-    border-left: 3px solid transparent !important;
-    transition: all 0.2s ease !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    box-shadow: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:hover,
-[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:hover {
-    background: #f1f5f9 !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label[aria-checked="true"],
-[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"][aria-checked="true"],
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
-    background: #eef2ff !important;
-    border-left-color: #3b82f6 !important;
-}
-/* Hide default radio control (keep label text / markdown visible) */
-[data-testid="stSidebar"] [data-testid="stRadio"] label svg {
-    display: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div:has(svg) {
-    display: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child:not(:has(.stMarkdown)):not(:has(p)) {
-    display: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label p,
-[data-testid="stSidebar"] [data-testid="stRadio"] label span {
-    color: #1e293b !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    margin: 0 !important;
-    line-height: 1.25 !important;
-}
-[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] p,
-[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] span,
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p,
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) span {
-    color: #0f172a !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stSelectbox label,
-[data-testid="stSidebar"] .stMultiSelect label,
-[data-testid="stSidebar"] .stSlider label {
-    color: #64748b !important;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-}
-[data-testid="stSidebar"] .stCaption {
-    color: #475569 !important;
-}
 /* Sidebar scrollbar */
-[data-testid="stSidebar"] ::-webkit-scrollbar {
-    width: 4px;
-}
-[data-testid="stSidebar"] ::-webkit-scrollbar-track {
-    background: transparent;
-}
+[data-testid="stSidebar"] ::-webkit-scrollbar { width: 4px; }
+[data-testid="stSidebar"] ::-webkit-scrollbar-track { background: transparent; }
 [data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.12);
+    background: var(--border);
     border-radius: 4px;
 }
 
-/* Sidebar brand */
+/* ── Sidebar Brand ─────────────────────────────────────────────────── */
 .sidebar-brand {
     display: flex;
     align-items: center;
@@ -152,25 +133,23 @@ html, body, [class*="css"] {
 }
 .brand-icon {
     width: 42px; height: 42px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
     border-radius: var(--radius-sm);
     display: flex; align-items: center; justify-content: center;
     font-size: 1.3rem;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+    box-shadow: 0 4px 12px rgba(124,58,237,0.28);
 }
-.brand-text {
-    display: flex; flex-direction: column;
-}
+.brand-text { display: flex; flex-direction: column; }
 .brand-text strong {
-    color: #f1f5f9 !important;
+    color: var(--text-primary) !important;
     font-size: 1rem;
     font-weight: 700;
     letter-spacing: -0.01em;
 }
 .brand-text .version-badge {
     display: inline-block;
-    background: rgba(99,102,241,0.2);
-    color: #a5b4fc !important;
+    background: var(--purple-100);
+    color: var(--purple-600) !important;
     font-size: 0.65rem;
     padding: 1px 8px;
     border-radius: 20px;
@@ -180,60 +159,257 @@ html, body, [class*="css"] {
     width: fit-content;
 }
 
-/* Sidebar nav section label */
+/* ── Nav Section Label ─────────────────────────────────────────────── */
 .nav-section-label {
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #475569 !important;
+    color: var(--text-muted) !important;
     font-weight: 700;
     padding: 0.5rem 0 0.25rem;
 }
 
-/* Sidebar stats */
+/* ── Sidebar Radio Nav ─────────────────────────────────────────────── */
+[data-testid="stSidebar"] [data-testid="stRadio"] { width: 100%; }
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label,
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"] {
+    width: 100% !important;
+    min-height: 44px;
+    height: 44px;
+    box-sizing: border-box !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-left: 3px solid transparent !important;
+    transition: var(--transition) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:hover,
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+    background: var(--purple-50) !important;
+}
+/* Active nav item */
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label[aria-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"][aria-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: var(--purple-50) !important;
+    border-left-color: var(--purple-600) !important;
+}
+/* Hide raw radio dots */
+[data-testid="stSidebar"] [data-testid="stRadio"] label svg { display: none !important; }
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div:has(svg) { display: none !important; }
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child:not(:has(.stMarkdown)):not(:has(p)) {
+    display: none !important;
+}
+/* Nav text */
+[data-testid="stSidebar"] [data-testid="stRadio"] label p,
+[data-testid="stSidebar"] [data-testid="stRadio"] label span {
+    color: var(--text-secondary) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+}
+/* Active nav text → purple */
+[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] p,
+[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] span,
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p,
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) span {
+    color: var(--purple-600) !important;
+    font-weight: 600 !important;
+}
+
+/* ── Sidebar Filter Labels ─────────────────────────────────────────── */
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stMultiSelect label,
+[data-testid="stSidebar"] .stSlider label {
+    color: var(--text-muted) !important;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+.filter-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px;
+    padding-left: 2px;
+}
+
+/* ── Sidebar Stats ─────────────────────────────────────────────────── */
 .sidebar-stats {
-    background: rgba(255,255,255,0.04);
+    background: var(--border-light);
     border-radius: var(--radius-sm);
-    padding: 0.75rem;
+    padding: 0.75rem 0.875rem;
     margin-top: 0.5rem;
+    border: 1px solid var(--border);
 }
 .sidebar-stats .stat-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.2rem 0;
+    padding: 0.22rem 0;
     font-size: 0.78rem;
+    color: var(--text-secondary) !important;
 }
 .sidebar-stats .stat-value {
-    color: #e2e8f0 !important;
-    font-weight: 600;
+    color: var(--purple-600) !important;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
-/* Sidebar quick actions */
-.quick-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 0.5rem;
+/* ══════════════════════════════════════════════════════════════════════
+   DROPDOWNS / SELECTS — white, clean border, purple focus
+   ══════════════════════════════════════════════════════════════════════ */
+[data-baseweb="select"] > div,
+[data-baseweb="select"] [data-baseweb="input"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
-.quick-actions .action-btn {
-    flex: 1;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: var(--radius-sm);
-    padding: 0.5rem;
-    text-align: center;
-    font-size: 0.72rem;
-    color: #94a3b8 !important;
-    cursor: pointer;
-    transition: var(--transition);
+[data-baseweb="select"] > div:hover {
+    border-color: var(--purple-500) !important;
 }
-.quick-actions .action-btn:hover {
-    background: rgba(255,255,255,0.1);
-    color: #f1f5f9 !important;
+[data-baseweb="select"] > div:focus-within {
+    border-color: var(--purple-600) !important;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.12) !important;
+}
+/* Selected text */
+[data-baseweb="select"] [data-baseweb="tag"],
+[data-baseweb="select"] span {
+    color: var(--text-primary) !important;
+    font-size: 0.875rem !important;
+}
+/* Dropdown menu */
+[data-baseweb="popover"] [data-baseweb="menu"],
+[data-baseweb="menu"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+[data-baseweb="menu"] li {
+    color: var(--text-primary) !important;
+    font-size: 0.875rem !important;
+    transition: background 0.12s ease !important;
+}
+[data-baseweb="menu"] li:hover,
+[data-baseweb="menu"] li[aria-selected="true"] {
+    background: var(--purple-50) !important;
+    color: var(--purple-700) !important;
+}
+/* Chevron arrow — hide BasewUI's icon, replace via CSS */
+[data-baseweb="select"] svg {
+    color: var(--text-muted) !important;
+    width: 16px !important;
+    height: 16px !important;
 }
 
-/* ── Main Content Area ─────────────────────────────────────────────── */
+/* Streamlit select wrapper labels */
+.stSelectbox label, .stMultiselect label {
+    color: var(--text-secondary) !important;
+    font-size: 0.82rem !important;
+    font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SLIDERS — purple fill, white thumb, no red
+   ══════════════════════════════════════════════════════════════════════ */
+/* Track */
+[data-testid="stSlider"] [role="slider"],
+.stSlider [data-baseweb="slider"] div[data-testid="stTickBarMin"],
+.stSlider [data-baseweb="slider"] div[data-testid="stTickBarMax"] {
+    color: var(--text-muted) !important;
+    font-size: 0.72rem !important;
+}
+/* Base track (grey) */
+[data-baseweb="slider"] [data-testid="stSlider"] div,
+.stSlider [data-baseweb="slider"] > div > div:first-child {
+    background: var(--border) !important;
+}
+/* Filled range (purple) */
+[data-baseweb="slider"] div[style*="background-color"] {
+    background-color: var(--purple-600) !important;
+}
+/* Thumb */
+[data-baseweb="slider"] [role="slider"] {
+    background: var(--bg-card) !important;
+    border: 2px solid var(--purple-600) !important;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    transition: box-shadow 0.15s ease !important;
+}
+[data-baseweb="slider"] [role="slider"]:hover,
+[data-baseweb="slider"] [role="slider"]:focus {
+    box-shadow: 0 0 0 4px rgba(124,58,237,0.18), 0 2px 8px rgba(124,58,237,0.25) !important;
+}
+/* Slider label */
+.stSlider label {
+    color: var(--text-secondary) !important;
+    font-size: 0.82rem !important;
+    font-weight: 500;
+}
+/* Slider value tooltip */
+[data-baseweb="tooltip"] {
+    background: var(--purple-600) !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    font-size: 0.75rem !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SEGMENTED CONTROL (Show top N) — rendered as st.radio outside sidebar
+   ══════════════════════════════════════════════════════════════════════ */
+.segmented-control {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+.seg-btn {
+    padding: 7px 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border);
+    transition: var(--transition);
+    outline: none;
+    font-family: 'Inter', sans-serif;
+}
+.seg-btn:last-child { border-right: none; }
+.seg-btn:hover:not(.seg-active) { background: var(--border-light); }
+.seg-btn.seg-active {
+    background: var(--purple-600);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ══════════════════════════════════════════════════════════════════════ */
 .main .block-container {
     padding: 1.5rem 2.5rem 3rem;
     max-width: 1440px;
@@ -246,7 +422,7 @@ html, body, [class*="css"] {
     justify-content: space-between;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--neutral-200);
+    border-bottom: 1px solid var(--border);
 }
 .page-header-left {
     display: flex;
@@ -256,31 +432,27 @@ html, body, [class*="css"] {
 .page-title {
     font-size: 1.6rem;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--text-primary);
     margin: 0;
     letter-spacing: -0.02em;
 }
 .page-subtitle {
     font-size: 0.82rem;
-    color: var(--neutral-400);
+    color: var(--text-muted);
     margin: 0;
     font-weight: 400;
 }
-.page-header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.page-header-right { display: flex; align-items: center; gap: 8px; }
 .header-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: var(--neutral-50);
-    border: 1px solid var(--neutral-200);
+    background: var(--bg-app);
+    border: 1px solid var(--border);
     border-radius: 20px;
     padding: 4px 12px;
     font-size: 0.72rem;
-    color: var(--neutral-500);
+    color: var(--text-muted);
     font-weight: 500;
 }
 .header-badge .dot {
@@ -298,19 +470,20 @@ html, body, [class*="css"] {
     margin-bottom: 2rem;
 }
 .kpi-card {
-    background: #ffffff;
-    border: 1px solid var(--neutral-200);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 1.1rem 1.3rem;
     position: relative;
     overflow: hidden;
     transition: var(--transition);
     cursor: default;
+    box-shadow: var(--shadow-sm);
 }
 .kpi-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
-    border-color: var(--neutral-300);
+    border-color: var(--purple-200);
 }
 .kpi-accent {
     position: absolute;
@@ -322,7 +495,7 @@ html, body, [class*="css"] {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--neutral-400);
+    color: var(--text-muted);
     font-weight: 600;
     margin-bottom: 0.55rem;
     padding-left: 8px;
@@ -330,7 +503,7 @@ html, body, [class*="css"] {
 .kpi-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--text-primary);
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
     font-family: 'Inter', sans-serif;
@@ -345,16 +518,16 @@ html, body, [class*="css"] {
     gap: 4px;
     padding-left: 8px;
 }
-.delta-up   { color: var(--accent-green); }
-.delta-down { color: var(--accent-rose); }
-.delta-neutral { color: var(--neutral-400); }
+.delta-up      { color: var(--accent-green); }
+.delta-down    { color: #ef4444; }
+.delta-neutral { color: var(--text-muted); }
 
 /* ── Section Headers ───────────────────────────────────────────────── */
 .section-header {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--neutral-500);
+    color: var(--text-secondary);
     font-weight: 700;
     margin: 2rem 0 1rem;
     display: flex;
@@ -365,7 +538,7 @@ html, body, [class*="css"] {
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(to right, var(--neutral-200), transparent);
+    background: linear-gradient(to right, var(--border), transparent);
 }
 
 /* ── Alert Banners ─────────────────────────────────────────────────── */
@@ -380,36 +553,35 @@ html, body, [class*="css"] {
     border-left: 4px solid;
     line-height: 1.5;
 }
-.alert-info    { background: #eff6ff; border-color: var(--accent-blue); color: #1e3a5f; }
+.alert-info    { background: #eff6ff; border-color: var(--accent-blue);  color: #1e3a5f; }
 .alert-success { background: #f0fdf4; border-color: var(--accent-green); color: #064e3b; }
 .alert-warning { background: #fffbeb; border-color: var(--accent-amber); color: #78350f; }
-.alert-danger  { background: #fef2f2; border-color: var(--accent-rose); color: #7f1d1d; }
+.alert-danger  { background: var(--purple-50); border-color: var(--purple-600); color: var(--purple-700); }
 
 /* ── Insight Cards ─────────────────────────────────────────────────── */
 .insight-box {
-    background: var(--neutral-50);
-    border: 1px solid var(--neutral-200);
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
-    padding: 1.1rem 1.3rem;
+    padding: 1.15rem 1.25rem;
     margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
     transition: var(--transition);
 }
-.insight-box:hover {
-    box-shadow: var(--shadow-sm);
-}
+.insight-box:hover { box-shadow: var(--shadow-md); }
 .insight-box h4 {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--neutral-500);
+    color: var(--text-secondary);
     margin: 0 0 0.5rem;
     font-weight: 700;
 }
 .insight-box p {
     font-size: 0.85rem;
-    color: var(--neutral-700);
+    color: var(--text-primary);
     margin: 0;
-    line-height: 1.65;
+    line-height: 1.5;
 }
 
 /* ── Score Badges ──────────────────────────────────────────────────── */
@@ -421,61 +593,68 @@ html, body, [class*="css"] {
     font-weight: 600;
     letter-spacing: 0.04em;
 }
-.badge-top    { background: #ecfdf5; color: #065f46; }
-.badge-mid    { background: #eff6ff; color: #1e40af; }
-.badge-low    { background: #fef9c3; color: #713f12; }
+.badge-top { background: #ecfdf5; color: #065f46; }
+.badge-mid { background: var(--purple-100); color: var(--purple-700); }
+.badge-low { background: #fef9c3; color: #713f12; }
 
 /* ── Dataframe ─────────────────────────────────────────────────────── */
 [data-testid="stDataFrame"] {
     border-radius: var(--radius-md);
-    border: 1px solid var(--neutral-200) !important;
+    border: 1px solid var(--border) !important;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────── */
-.stDownloadButton > button {
-    background: var(--primary) !important;
-    color: #f1f5f9 !important;
+.stDownloadButton > button, .stButton > button {
+    background: var(--purple-600) !important;
+    color: #ffffff !important;
     border: none !important;
     border-radius: var(--radius-sm) !important;
-    font-size: 0.8rem !important;
+    font-size: 0.82rem !important;
     font-weight: 600 !important;
-    padding: 0.45rem 1.2rem !important;
-    letter-spacing: 0.03em;
+    padding: 0.5rem 1.3rem !important;
+    letter-spacing: 0.02em;
     transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(124,58,237,0.2) !important;
 }
-.stDownloadButton > button:hover {
-    background: var(--primary-light) !important;
-    box-shadow: var(--shadow-sm);
+.stDownloadButton > button:hover, .stButton > button:hover {
+    background: var(--purple-700) !important;
+    box-shadow: 0 4px 14px rgba(124,58,237,0.3) !important;
+    transform: translateY(-1px);
 }
 
 /* ── Metric Widget ─────────────────────────────────────────────────── */
 [data-testid="metric-container"] {
-    background: #ffffff;
-    border: 1px solid var(--neutral-200);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 0.85rem 1rem;
+    box-shadow: var(--shadow-sm);
 }
 [data-testid="stMetricValue"] {
     font-size: 1.4rem !important;
     font-weight: 700 !important;
-    color: var(--primary) !important;
+    color: var(--text-primary) !important;
 }
 [data-testid="stMetricLabel"] {
     font-size: 0.7rem !important;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--neutral-400) !important;
+    color: var(--text-muted) !important;
 }
+
+/* ── Spinner / Progress ────────────────────────────────────────────── */
+[data-testid="stSpinner"] svg { color: var(--purple-600) !important; }
 
 /* ── Footer ────────────────────────────────────────────────────────── */
 .dashboard-footer {
     text-align: center;
     padding: 2rem 0 1rem;
     margin-top: 3rem;
-    border-top: 1px solid var(--neutral-100);
+    border-top: 1px solid var(--border-light);
     font-size: 0.72rem;
-    color: var(--neutral-400);
+    color: var(--text-muted);
 }
 
 /* ── Animations ────────────────────────────────────────────────────── */
@@ -484,35 +663,214 @@ html, body, [class*="css"] {
     to   { opacity: 1; transform: translateY(0); }
 }
 .kpi-grid, .insight-box, [data-testid="stDataFrame"] {
-    animation: fadeInUp 0.4s ease-out;
+    animation: fadeInUp 0.35s ease-out;
 }
 
-/* ── Responsive ────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-    .kpi-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .main .block-container {
-        padding: 1rem;
-    }
-    .page-header {
-        flex-direction: column;
-        gap: 8px;
-    }
-}
+/* ── Plotly modebar ────────────────────────────────────────────────── */
+.js-plotly-plot .plotly .modebar { display: none !important; }
 
-/* ── Plotly modebar hide ───────────────────────────────────────────── */
-.js-plotly-plot .plotly .modebar {
+/* ══════════════════════════════════════════════════════════════════════
+   HORIZONTAL RADIO → SEGMENTED CONTROL (main content, not sidebar)
+   ══════════════════════════════════════════════════════════════════════ */
+/* Only applies outside the sidebar */
+.main [data-testid="stRadio"] div[role="radiogroup"] {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    gap: 0 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+.main [data-testid="stRadio"] div[role="radiogroup"] > label {
+    flex: 0 0 auto !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 6px 22px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-right: 1px solid #e2e8f0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: none !important;
+}
+.main [data-testid="stRadio"] div[role="radiogroup"] > label:last-child {
+    border-right: none !important;
+}
+.main [data-testid="stRadio"] div[role="radiogroup"] > label:hover {
+    background: #f1f5f9 !important;
+}
+.main [data-testid="stRadio"] div[role="radiogroup"] > label[aria-checked="true"],
+.main [data-testid="stRadio"] label:has(input:checked) {
+    background: #7c3aed !important;
+    border-right-color: #7c3aed !important;
+}
+/* Active option text → white */
+.main [data-testid="stRadio"] label[aria-checked="true"] p,
+.main [data-testid="stRadio"] label[aria-checked="true"] span,
+.main [data-testid="stRadio"] label:has(input:checked) p,
+.main [data-testid="stRadio"] label:has(input:checked) span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+/* Inactive option text */
+.main [data-testid="stRadio"] label p,
+.main [data-testid="stRadio"] label span {
+    color: #475569 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+}
+/* Hide radio dot in main area too */
+.main [data-testid="stRadio"] label svg { display: none !important; }
+.main [data-testid="stRadio"] label > div:has(svg) { display: none !important; }
+.main [data-testid="stRadio"] label > div:first-child:not(:has(.stMarkdown)):not(:has(p)) {
     display: none !important;
 }
 
-/* ── Filter label (sidebar) ────────────────────────────────────────── */
-.filter-label {
-    font-size: 0.68rem;
+/* ── Responsive ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   CHART CARD — white container wrapping a dark-bg Plotly canvas
+   ══════════════════════════════════════════════════════════════════════ */
+.chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+}
+.chart-card-header {
+    padding: 0.85rem 1.25rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #475569;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-card);
+}
+.chart-card-body {
+    padding: 0;
+    background: #1a1d2e;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   KPI CARD — top-border accent variant
+   ══════════════════════════════════════════════════════════════════════ */
+.kpi-card-top {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: 3px solid;           /* color set inline */
+    border-radius: var(--radius-md);
+    padding: 1.1rem 1.3rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+.kpi-card-top:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+.kpi-top-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.45rem;
+}
+.kpi-top-value {
+    font-size: 1.7rem;
     font-weight: 700;
-    margin-bottom: 6px;
-    padding-left: 2px;
+    color: var(--text-primary);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.kpi-top-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 1.75rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CONFIG PANEL card (left col on Shops page)
+   ══════════════════════════════════════════════════════════════════════ */
+.config-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1.25rem 1.25rem 1.5rem;
+    height: 100%;
+}
+.config-card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* LLM gradient button override */
+.btn-llm > button {
+    background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.02em !important;
+    width: 100%;
+    box-shadow: 0 4px 14px rgba(124,58,237,0.35) !important;
+    transition: var(--transition) !important;
+}
+.btn-llm > button:hover {
+    box-shadow: 0 6px 20px rgba(124,58,237,0.5) !important;
+    transform: translateY(-1px) !important;
+}
+
+@media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .main .block-container { padding: 1rem; }
+    .page-header { flex-direction: column; gap: 8px; }
+}
+
+/* ── LLM Empty State Dropzone ──────────────────────────────────────── */
+.dropzone-container {
+    background: rgba(248, 250, 252, 0.5); /* bg-slate-50/50 */
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-top: 1rem;
+}
+.dropzone-icon {
+    font-size: 3.5rem;
+    color: #e9d5ff; /* text-purple-300 */
+    margin-bottom: 1rem;
+    line-height: 1;
+}
+.dropzone-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+.dropzone-text {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin: 0;
 }
