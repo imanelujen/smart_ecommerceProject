@@ -11,7 +11,7 @@ def make_synthetic_df(n=200):
     cats = ["Electronics", "Sport", "Home", "Fashion", "Books"]
     brands = ["BrandA", "BrandB", "BrandC", "BrandD"]
     subcats = ["Subcat1", "Subcat2", "Subcat3"]
-    return pd.DataFrame({
+    df = pd.DataFrame({
         "title":          [f"Product {i}" for i in range(n)],
         "price":          np.random.lognormal(3.5, 0.8, n).clip(1, 500),
         "rating":         np.random.uniform(2.5, 5.0, n),
@@ -29,6 +29,13 @@ def make_synthetic_df(n=200):
         "related_products": ["Product A, Product B" if i%3==0 else "" for i in range(n)],
         "is_top_product": 0,
     })
+    # Add price_band column for association rules compatibility
+    df["price_band"] = pd.cut(
+        df["price"],
+        bins=[0, 10, 30, 100, 300, float("inf")],
+        labels=["<$10", "$10-30", "$30-100", "$100-300", "> $300"]
+    )
+    return df
 
 
 def test_preprocessing():
