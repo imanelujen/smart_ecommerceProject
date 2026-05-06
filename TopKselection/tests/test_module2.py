@@ -9,6 +9,8 @@ import tempfile
 def make_synthetic_df(n=200):
     np.random.seed(42)
     cats = ["Electronics", "Sport", "Home", "Fashion", "Books"]
+    brands = ["BrandA", "BrandB", "BrandC", "BrandD"]
+    subcats = ["Subcat1", "Subcat2", "Subcat3"]
     return pd.DataFrame({
         "title":          [f"Product {i}" for i in range(n)],
         "price":          np.random.lognormal(3.5, 0.8, n).clip(1, 500),
@@ -19,6 +21,8 @@ def make_synthetic_df(n=200):
         "availability":   np.random.choice([True, False], n, p=[0.85, 0.15]),
         "variant_count":  np.random.randint(1, 6, n),
         "category":       np.random.choice(cats, n),
+        "brand":          np.random.choice(brands, n),
+        "subcategory":    np.random.choice(subcats, n),
         "platform":       np.random.choice(["shopify", "woocommerce"], n),
         "shop_country":   np.random.choice(["USA", "UK", "FR", "DE"], n),
         "shop_name":      np.random.choice(["ShopA", "ShopB", "ShopC"], n),

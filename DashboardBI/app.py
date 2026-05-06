@@ -228,7 +228,7 @@ if page == "Overview":
                      color="count", color_continuous_scale=PURPLE_SCALE, text="count")
         fig.update_traces(texttemplate="%{text}", textposition="outside",
                           marker_line_width=0, textfont_color="#334155")
-        fig.update_layout(height=320, showlegend=False, coloraxis_showscale=False,
+        fig.update_layout(height=400, showlegend=False, coloraxis_showscale=False,
                           xaxis={"showgrid":False,"visible":False},
                           yaxis={"title":"", "tickfont":{"color":"#334155"}})
         st.plotly_chart(fig, use_container_width=True)
@@ -242,7 +242,7 @@ if page == "Overview":
             textinfo="percent+label", textfont_size=11,
         ))
         fig2.update_layout(
-            height=320, showlegend=True,
+            height=400, showlegend=True,
             legend=dict(orientation="h", y=-0.05, font_size=11),
             annotations=[{"text": f"<b>{len(df):,}</b><br>products", "x":0.5,"y":0.5,
                            "font_size":13, "showarrow":False, "font_color":"#334155"}],
@@ -252,7 +252,7 @@ if page == "Overview":
     section("Score Distribution by Platform")
     fig3 = px.histogram(df, x="score", nbins=40, color="platform", barmode="overlay",
                         opacity=0.75, color_discrete_map=PLATFORM_COLORS)
-    fig3.update_layout(height=200, bargap=0.02,
+    fig3.update_layout(height=300, bargap=0.02,
                        legend={"orientation":"h","y":1.15,"x":0,"font_size":11,
                                "font":{"color":"#334155"}},
                        xaxis={"title":"Score","gridcolor":"#e2e8f0","color":"#64748b"},
@@ -472,7 +472,7 @@ elif page == "Pricing Analysis":
                  annotation_text="Median score", annotation_position="bottom right", annotation_font_size=10)
     f3.add_vline(x=px_med, line_dash="dash", line_color="#94a3b8", line_width=1,
                  annotation_text="Median price", annotation_position="top right", annotation_font_size=10)
-    f3.update_layout(height=320, xaxis={"title":"Price ($)","gridcolor":"#f8fafc"},
+    f3.update_layout(height=400, xaxis={"title":"Price ($)","gridcolor":"#f8fafc"},
                      yaxis={"title":"Score","gridcolor":"#f1f5f9"},
                      legend={"orientation":"h","y":1.12,"font_size":10})
     st.plotly_chart(f3, use_container_width=True)
@@ -555,20 +555,9 @@ elif page == "Shops & Geography":
         (f"{df['shop_country'].nunique() if 'shop_country' in df.columns else '—'}", "Countries", "#7c3aed"),
     ])
 
-    left_col, right_col = st.columns([1, 2])
-    with left_col:
-        st.markdown('<div class="config-card">', unsafe_allow_html=True)
-        st.markdown('<div class="config-card-title">Configuration</div>', unsafe_allow_html=True)
-        shop_filter = st.selectbox("Shop", ["All"] + list(df_shops["shop_name"].unique()), key="shop_filter")
-        platform_filter = st.selectbox("Platform", ["All", "shopify", "woocommerce"], key="plat_filter")
-        min_score = st.slider("Min Avg Score", 0.0, 1.0, 0.0, step=0.05, key="score_filter")
-        
-        st.markdown('<div style="margin-top: 1.5rem;" class="btn-llm">', unsafe_allow_html=True)
-        st.button("Generate with LLM", key="shop_llm_btn")
-        st.markdown('</div></div>', unsafe_allow_html=True)
-
-    with right_col:
-        if "shop_country" in df.columns:
+    if "shop_country" in df.columns:
+        c1, c2 = st.columns(2)
+        with c1:
             cdf = df["shop_country"].value_counts().reset_index()
             cdf.columns = ["country","count"]
             f1 = go.Figure(go.Pie(
@@ -576,26 +565,25 @@ elif page == "Shops & Geography":
                 marker_colors=["#c084fc", "#9333ea", "#7c3aed", "#6b21a8", "#a78bfa"],
                 textinfo="percent+label", textfont_size=11, textfont_color="#e2e8f0"
             ))
-            f1.update_layout(**_dark_layout(showlegend=False, height=280, margin=dict(l=0, r=0, t=10, b=10)))
+            f1.update_layout(**_dark_layout(showlegend=False, height=370, margin=dict(l=0, r=0, t=10, b=10)))
             chart_card("PRODUCT DISTRIBUTION BY COUNTRY", f1)
-
-        f2 = px.bar(df_shops.head(10), x="avg_score", y="shop_name", orientation="h",
-                    color="avg_score", color_continuous_scale=PURPLE_DARK, text="avg_score")
-        f2.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0, textfont_color="#e2e8f0")
-        f2.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=300))
-        f2.update_xaxes(visible=False)
-        f2.update_yaxes(title="")
-        chart_card("TOP 10 SHOPS BY AVG SCORE", f2)
-
-        if "shop_country" in df.columns:
+        with c2:
             cs = df.groupby("shop_country")["score"].mean().sort_values(ascending=False).reset_index()
             f3 = px.bar(cs, x="shop_country", y="score", color="score",
                         color_continuous_scale=PURPLE_DARK, text="score")
             f3.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0, textfont_color="#e2e8f0")
-            f3.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=280))
+            f3.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=370))
             f3.update_xaxes(title="")
             f3.update_yaxes(title="Avg Score", gridcolor="#2d3148")
             chart_card("AVG SCORE BY COUNTRY", f3)
+
+    f2 = px.bar(df_shops.head(10), x="avg_score", y="shop_name", orientation="h",
+                color="avg_score", color_continuous_scale=PURPLE_DARK, text="avg_score")
+    f2.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0, textfont_color="#e2e8f0")
+    f2.update_layout(**_dark_layout(showlegend=False, coloraxis_showscale=False, height=400))
+    f2.update_xaxes(visible=False)
+    f2.update_yaxes(title="")
+    chart_card("TOP 10 SHOPS BY AVG SCORE", f2)
 
     section("Shop Detail Table")
     scols = [c for c in ["shop_name","shop_country","avg_score","product_count","avg_rating"]
@@ -607,12 +595,12 @@ elif page == "Shops & Geography":
 
 
 # ════════════════════════════════════════════════════════════════════════
-# PAGE 7 — LLM INSIGHTS
+# PAGE 7 — knowledge & Insights
 # ════════════════════════════════════════════════════════════════════════
-elif page == "LLM Insights":
+elif page == "knowledge & Insights":
     from LLM.mcp.mcp_client import get_mcp_client
 
-    page_header("LLM Insights", "AI-generated analysis and strategic recommendations")
+    page_header("knowledge & Insights", "AI-generated analysis and strategic recommendations")
 
     # ── Automated Insight Cards ─────────────────────────────────────────
     section("Automated Insights")
@@ -762,13 +750,13 @@ elif page == "LLM Insights":
 
 
 # ════════════════════════════════════════════════════════════════════════
-# PAGE 8 — ASSISTANT BI
+# PAGE 8 — ASSISTANT AI
 # ════════════════════════════════════════════════════════════════════════
-elif page == "Assistant BI":
+elif page == "Assistant AI":
     try:
         from LLM.chatbot_page import render_chatbot
         render_chatbot()
     except Exception as e:
-        page_header("Assistant BI", "Interactive chatbot")
+        page_header("Assistant AI", "Interactive chatbot")
         alert(f"Chatbot module could not load: {e}", "warning")
         footer()

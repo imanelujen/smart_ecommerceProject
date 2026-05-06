@@ -13,6 +13,6 @@ NAV_ITEMS: Tuple[str, ...] = (
     "Pricing Analysis",
     "Association Rules",
     "Shops & Geography",
-    "LLM Insights",
-    "Assistant BI",
+    "knowledge & Insights",
+    "Assistant AI",
 )
