@@ -1,4 +1,4 @@
-# Module 1 — Web Scraping with A2A Agents
+# Scraping — Web Scraping with A2A Agents
 
 ## Project structure
 
@@ -86,7 +86,7 @@ After each run, `data/` contains:
 | File | Description |
 |------|-------------|
 | `products_YYYYMMDD_HHMMSS.csv` | Timestamped CSV — one product per row |
-| `products_YYYYMMDD_HHMMSS.jsonl` | JSONL for LLM enrichment (Module 5) |
+| `products_YYYYMMDD_HHMMSS.jsonl` | JSONL for LLM enrichment (LLM) |
 | `products_history.csv` | Cumulative dataset (all scrapes appended) |
 
 ### CSV columns
@@ -106,7 +106,7 @@ After each run, `data/` contains:
 | `vendor` | str | Brand / vendor name |
 | `image_url` | str | Main product image |
 | `scraped_at` | datetime | UTC timestamp |
-| `score` | float | Placeholder — filled by Module 2 |
+| `score` | float | Placeholder — filled by TopKselection |
 
 ## Run the tests
 
@@ -130,8 +130,8 @@ Each agent is autonomous and interchangeable. To add a new platform:
 2. Implement `detect()`, `scrape()`, `clean()`
 3. Register it in `Orchestrator.__init__` before `GenericHTMLAgent`
 
-## Module handoff → Module 2 (ML Analysis)
+## Module handoff → TopKselection (ML Analysis)
 
-The `products_latest.csv` file is the direct input to Module 2.
+The `products_latest.csv` file is the direct input to TopKselection.
 The `score` column (currently 0.0) will be populated by the
 Top-K selection algorithm.

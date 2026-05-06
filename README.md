@@ -1,14 +1,14 @@
 # Smart eCommerce Intelligence
 
-**FST Tanger — LSI 2 | Module : DM & SID | 2025/2026**
+**| DM & SID | 2025/2026**
 
 Système intelligent et automatisé pour l'analyse de produits e-commerce via scraping, Machine Learning, pipelines MLOps, visualisation BI, et enrichissement LLM.
 
 ---
 # 2. Lancer
-python module5/enrichment_pipeline.py \
-  --input module2/output/products_scored.csv \
-  --output module5/output \
+python LLM/enrichment_pipeline.py \
+  --input TopKselection/output/products_scored.csv \
+  --output LLM/output \
   --max 50
 
 ## Structure du projet
@@ -16,14 +16,14 @@ python module5/enrichment_pipeline.py \
 ```
 smart_ecommerce/
 │
-├── agents/                         # Module 1 — Agents A2A
+├── agents/                         # Scraping  — Agents A2A
 │   ├── base_agent.py               #   Classe abstraite + dataclass Product (31 champs)
 │   ├── shopify_agent.py            #   Agent Shopify (API /products.json + HTML fallback)
 │   ├── woocommerce_agent.py        #   Agent WooCommerce (REST API + Selenium fallback)
 │   └── generic_agent.py            #   Agent générique (BeautifulSoup heuristique)
 ├── orchestrator.py                 #   Orchestrateur A2A (détection, routing, dédup, export)
 │
-├── module2/                        # Module 2 — Analyse ML & Top-K
+├── TopKselection/                  # TopKselection — Analyse ML & Top-K
 │   ├── preprocessing.py            #   Nettoyage, feature engineering, normalisation, split
 │   ├── scoring.py                  #   Score composite pondéré + sélection Top-K
 │   ├── supervised.py               #   Random Forest + XGBoost (CV, F1, matrice confusion)
@@ -31,17 +31,17 @@ smart_ecommerce/
 │   ├── association_rules.py        #   Apriori / FP-Growth (support, confidence, lift)
 │   └── pipeline.py                 #   Point d'entrée unique : prétraitement→scoring→ML→règles
 │
-├── module3/                        # Module 3 — Kubeflow Pipelines & CI/CD
+├── KubeflowPipelines/                        # KubeflowPipelines — Kubeflow Pipelines & CI/CD
 │   ├── components/                 #   5 composants kfp (@dsl.component)
 │   ├── pipeline/                   #   DAG du pipeline + CLI (--local / --submit / --compile)
 │   ├── docker/                     #   Dockerfile.scraping + Dockerfile.ml + docker-compose
 │   └── .github/workflows/          #   CI/CD GitHub Actions (test → build → deploy)
 │
-├── module4/                        # Module 4 — Dashboard BI (Streamlit)
+├── DashboardBI/                    # DashboardBI — Dashboard BI (Streamlit)
 │   ├── app.py                      #   6 pages : Overview, Top-K, Clusters, Prix, Règles, Shops
 │   └── data_loader.py              #   Chargement des outputs ML + données synthétiques demo
 │
-├── module5/                        # Module 5 — LLM + Module 6 — MCP
+├── LLM/                            #  LLM  — MCP
 │   ├── llm_client.py               #   Client LLM unifié (Anthropic / OpenAI / Mock)
 │   ├── chains.py                   #   4 chaînes CoT : résumé, rapport, profil client, stratégie
 │   ├── chatbot_page.py             #   Interface conversationnelle Streamlit
@@ -52,7 +52,7 @@ smart_ecommerce/
 │       ├── mcp_server_llm.py       #     Serveur LLM (5 outils d'enrichissement)
 │       └── mcp_server_audit.py     #     Serveur Audit (logs, permissions, rate limiting)
 │
-└── tests/                          # Tests unitaires Modules 1 & 2
+└── tests/                          # Tests unitaires Scraping & TopKselection
 ```
 
 ---
@@ -62,8 +62,8 @@ smart_ecommerce/
 ### 1. Installation
 
 ```bash
-git clone https://github.com/votre-repo/smart-ecommerce.git
-cd smart-ecommerce
+git clone https://github.com/imanelujen/smart_ecommerceProject.git
+cd smart_ecommerceProject
 
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
@@ -71,45 +71,45 @@ pip install -r requirements.txt
 cp .env.example .env   # Remplir les clés API
 ```
 
-### 2. Scraping (Module 1)
+### 2. Scraping (Scraping)
 
 ```bash
 python Scraping/orchestrator.py --urls https://store.myshopify.com https://store2.com
 # → Scraping/data/products_history.csv
 ```
 
-### 3. Analyse ML (Module 2)
+### 3. Analyse ML (TopKselection)
 
 ```bash
 python TopKselection/pipeline.py --csv Scraping/data/products_history.csv --k 50
 # → TopKselection/output/top_k_products.csv + models/
 ```
 
-### 4. Dashboard BI (Module 4)
+### 4. Dashboard BI (DashboardBI)
 
 ```bash
 pip install streamlit plotly
-streamlit run module4/app.py
+streamlit run DashboardBI/app.py
 # → http://localhost:8501
 ```
 
-### 5. Pipeline Kubeflow local (Module 3)
+### 5. Pipeline Kubeflow local (KubeflowPipelines)
 
 ```bash
 pip install kfp
-python module3/pipeline/smart_ecommerce_pipeline.py --local --urls https://store.myshopify.com
+python KubeflowPipelines/pipeline/smart_ecommerce_pipeline.py --local --urls https://store.myshopify.com
 ```
 
-### 6. Enrichissement LLM (Module 5)
+### 6. Enrichissement LLM (LLM)
 
 ```bash
 # Avec Claude (Anthropic)
 export LLM_PROVIDER=anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
-python module5/enrichment_pipeline.py --input module2/output/products_scored.csv
+python LLM/enrichment_pipeline.py --input TopKselection/output/products_scored.csv
 
 # Sans clé API (mode mock pour tests)
-python module5/enrichment_pipeline.py
+python LLM/enrichment_pipeline.py
 ```
 
 ---
@@ -148,7 +148,7 @@ python module5/enrichment_pipeline.py
 | Livrable | Fichier |
 |----------|---------|
 | Code agents A2A | `agents/` + `orchestrator.py` |
-| Pipeline Kubeflow (YAML) | `module3/pipeline/smart_ecommerce_pipeline.yaml` |
-| Tableau Top-K + Dashboard BI | `module2/output/top_k_products.csv` + `module4/app.py` |
-| Module LLM enrichissement | `module5/enrichment_pipeline.py` |
+| Pipeline Kubeflow (YAML) | `KubeflowPipelines/pipeline/smart_ecommerce_pipeline.yaml` |
+| Tableau Top-K + Dashboard BI | `TopKselection/output/top_k_products.csv` + `DashboardBI/app.py` |
+| LLM enrichissement | `LLM/enrichment_pipeline.py` |
 | Rapport technique | `rapport_technique.docx` |
